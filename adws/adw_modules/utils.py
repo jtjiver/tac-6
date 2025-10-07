@@ -184,7 +184,10 @@ def get_safe_subprocess_env() -> Dict[str, str]:
         
         # Agent Cloud Sandbox Environment (optional)
         "E2B_API_KEY": os.getenv("E2B_API_KEY"),
-        
+
+        # Helicone monitoring (optional)
+        "HELICONE_API_KEY": os.getenv("HELICONE_API_KEY"),
+
         # Cloudflare tunnel token (optional)
         "CLOUDFLARED_TUNNEL_TOKEN": os.getenv("CLOUDFLARED_TUNNEL_TOKEN"),
         

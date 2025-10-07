@@ -182,13 +182,13 @@ async function loadDatabaseSchema() {
 
 // Display query results
 function displayResults(response: QueryResponse, query: string) {
-  
+
   const resultsSection = document.getElementById('results-section') as HTMLElement;
   const sqlDisplay = document.getElementById('sql-display') as HTMLDivElement;
   const resultsContainer = document.getElementById('results-container') as HTMLDivElement;
-  
+
   resultsSection.style.display = 'block';
-  
+
   // Display natural language query and SQL
   sqlDisplay.innerHTML = `
     <div class="query-display">
@@ -198,7 +198,7 @@ function displayResults(response: QueryResponse, query: string) {
       <strong>SQL:</strong> <code>${response.sql}</code>
     </div>
   `;
-  
+
   // Display results table
   if (response.error) {
     resultsContainer.innerHTML = `<div class="error-message">${response.error}</div>`;
@@ -209,7 +209,55 @@ function displayResults(response: QueryResponse, query: string) {
     resultsContainer.innerHTML = '';
     resultsContainer.appendChild(table);
   }
-  
+
+  // Update results header to add download button
+  const resultsHeader = document.querySelector('.results-header') as HTMLElement;
+
+  // Check if download button already exists, if not create it
+  let downloadButton = resultsHeader.querySelector('.download-button') as HTMLButtonElement;
+  if (!downloadButton) {
+    downloadButton = document.createElement('button');
+    downloadButton.className = 'download-button';
+    downloadButton.innerHTML = '⬇';
+    downloadButton.title = 'Export results as CSV';
+
+    // Insert download button before the toggle button
+    const toggleButton = document.getElementById('toggle-results') as HTMLButtonElement;
+    toggleButton.parentElement?.insertBefore(downloadButton, toggleButton);
+  }
+
+  // Store the SQL and columns data for export
+  downloadButton.dataset.sql = response.sql;
+  downloadButton.dataset.columns = JSON.stringify(response.columns);
+
+  // Set up download button click handler
+  downloadButton.onclick = async (e) => {
+    e.preventDefault();
+    const button = e.target as HTMLButtonElement;
+    const originalContent = button.innerHTML;
+    button.classList.add('loading');
+    button.innerHTML = '<span class="loading-secondary"></span>';
+
+    try {
+      const sql = button.dataset.sql || '';
+      const columns = JSON.parse(button.dataset.columns || '[]');
+      await api.exportQueryResults(sql, columns);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export query results. Please try again.');
+    } finally {
+      button.classList.remove('loading');
+      button.innerHTML = originalContent;
+    }
+  };
+
+  // Show/hide download button based on results
+  if (response.error || response.results.length === 0) {
+    downloadButton.style.display = 'none';
+  } else {
+    downloadButton.style.display = 'flex';
+  }
+
   // Initialize toggle button
   const toggleButton = document.getElementById('toggle-results') as HTMLButtonElement;
   toggleButton.addEventListener('click', () => {
@@ -284,15 +332,45 @@ function displayTables(tables: TableSchema[]) {
     
     tableLeft.appendChild(tableName);
     tableLeft.appendChild(tableInfo);
-    
+
+    // Table actions container
+    const tableActions = document.createElement('div');
+    tableActions.className = 'table-actions';
+
+    // Download button
+    const downloadButton = document.createElement('button');
+    downloadButton.className = 'download-button';
+    downloadButton.innerHTML = '⬇';
+    downloadButton.title = 'Export table as CSV';
+    downloadButton.onclick = async (e) => {
+      e.preventDefault();
+      const button = e.target as HTMLButtonElement;
+      const originalContent = button.innerHTML;
+      button.classList.add('loading');
+      button.innerHTML = '<span class="loading-secondary"></span>';
+
+      try {
+        await api.exportTable(table.name);
+      } catch (error) {
+        console.error('Export failed:', error);
+        alert('Failed to export table. Please try again.');
+      } finally {
+        button.classList.remove('loading');
+        button.innerHTML = originalContent;
+      }
+    };
+
     const removeButton = document.createElement('button');
     removeButton.className = 'remove-table-button';
     removeButton.innerHTML = '&times;';
     removeButton.title = 'Remove table';
     removeButton.onclick = () => removeTable(table.name);
-    
+
+    tableActions.appendChild(downloadButton);
+    tableActions.appendChild(removeButton);
+
     tableHeader.appendChild(tableLeft);
-    tableHeader.appendChild(removeButton);
+    tableHeader.appendChild(tableActions);
     
     // Columns section
     const tableColumns = document.createElement('div');

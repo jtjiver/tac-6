@@ -13,8 +13,22 @@ def generate_sql_with_openai(query_text: str, schema_info: Dict[str, Any]) -> st
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable not set")
-        
-        client = OpenAI(api_key=api_key)
+
+        # Check if Helicone is configured
+        helicone_key = os.environ.get("HELICONE_API_KEY")
+        if helicone_key:
+            # Use Helicone proxy for monitoring
+            client = OpenAI(
+                api_key=api_key,
+                base_url="https://oai.helicone.ai/v1",
+                default_headers={
+                    "Helicone-Auth": f"Bearer {helicone_key}",
+                    "Helicone-Property-App": "tac-6",
+                    "Helicone-Property-Environment": "production"
+                }
+            )
+        else:
+            client = OpenAI(api_key=api_key)
         
         # Format schema for prompt
         schema_description = format_schema_for_prompt(schema_info)
@@ -74,8 +88,22 @@ def generate_sql_with_anthropic(query_text: str, schema_info: Dict[str, Any]) ->
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable not set")
-        
-        client = Anthropic(api_key=api_key)
+
+        # Check if Helicone is configured
+        helicone_key = os.environ.get("HELICONE_API_KEY")
+        if helicone_key:
+            # Use Helicone proxy for monitoring
+            client = Anthropic(
+                api_key=api_key,
+                base_url="https://anthropic.helicone.ai",
+                default_headers={
+                    "Helicone-Auth": f"Bearer {helicone_key}",
+                    "Helicone-Property-App": "tac-6",
+                    "Helicone-Property-Environment": "production"
+                }
+            )
+        else:
+            client = Anthropic(api_key=api_key)
         
         # Format schema for prompt
         schema_description = format_schema_for_prompt(schema_info)
@@ -152,8 +180,22 @@ def generate_random_query_with_openai(schema_info: Dict[str, Any]) -> str:
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable not set")
-        
-        client = OpenAI(api_key=api_key)
+
+        # Check if Helicone is configured
+        helicone_key = os.environ.get("HELICONE_API_KEY")
+        if helicone_key:
+            # Use Helicone proxy for monitoring
+            client = OpenAI(
+                api_key=api_key,
+                base_url="https://oai.helicone.ai/v1",
+                default_headers={
+                    "Helicone-Auth": f"Bearer {helicone_key}",
+                    "Helicone-Property-App": "tac-6",
+                    "Helicone-Property-Environment": "production"
+                }
+            )
+        else:
+            client = OpenAI(api_key=api_key)
         
         # Format schema for prompt
         schema_description = format_schema_for_prompt(schema_info)
@@ -205,8 +247,22 @@ def generate_random_query_with_anthropic(schema_info: Dict[str, Any]) -> str:
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable not set")
-        
-        client = Anthropic(api_key=api_key)
+
+        # Check if Helicone is configured
+        helicone_key = os.environ.get("HELICONE_API_KEY")
+        if helicone_key:
+            # Use Helicone proxy for monitoring
+            client = Anthropic(
+                api_key=api_key,
+                base_url="https://anthropic.helicone.ai",
+                default_headers={
+                    "Helicone-Auth": f"Bearer {helicone_key}",
+                    "Helicone-Property-App": "tac-6",
+                    "Helicone-Property-Environment": "production"
+                }
+            )
+        else:
+            client = Anthropic(api_key=api_key)
         
         # Format schema for prompt
         schema_description = format_schema_for_prompt(schema_info)
