@@ -9,8 +9,29 @@
   <body>
     <div id="app">
       <div class="container">
-        <h1>Natural Language SQL Interface</h1>
-        
+        <div class="app-header">
+          <h1>Natural Language SQL Interface</h1>
+          <button id="profile-button" class="profile-button" aria-label="User profile menu" aria-expanded="false" aria-haspopup="true">
+            <span class="profile-icon">👤</span>
+          </button>
+          <div id="profile-dropdown" class="profile-dropdown" role="menu" aria-labelledby="profile-button" style="display: none;">
+            <div class="profile-dropdown-header">
+              <div class="profile-avatar">👤</div>
+              <div class="profile-info">
+                <div class="profile-name">Guest User</div>
+                <div class="profile-email">guest@example.com</div>
+              </div>
+            </div>
+            <div class="profile-dropdown-divider"></div>
+            <ul class="profile-menu-items">
+              <li><button class="profile-menu-item" data-action="view-profile">View Profile</button></li>
+              <li><button class="profile-menu-item" data-action="account-settings">Account Settings</button></li>
+              <li><button class="profile-menu-item" data-action="help-support">Help & Support</button></li>
+              <li><button class="profile-menu-item" data-action="about">About</button></li>
+            </ul>
+          </div>
+        </div>
+
         <!-- Query Input Section -->
         <section id="query-section" class="query-section">
           <textarea 

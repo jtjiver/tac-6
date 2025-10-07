@@ -48,6 +48,9 @@ trees/
 # Claude hooks logs
 logs/
 
+# Claude local settings (auto-generated on approval)
+.claude/settings.local.json
+
 # Agent output directories
 agents/
 

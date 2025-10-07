@@ -5,12 +5,77 @@ import { api } from './api/client'
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
+  initializeUserProfile();
   initializeQueryInput();
   initializeFileUpload();
   initializeModal();
   initializeRandomQueryButton();
   loadDatabaseSchema();
 });
+
+// User Profile Dropdown Functionality
+function initializeUserProfile() {
+  const profileButton = document.getElementById('profile-button') as HTMLButtonElement;
+  const profileDropdown = document.getElementById('profile-dropdown') as HTMLDivElement;
+  const menuItems = document.querySelectorAll('.profile-menu-item') as NodeListOf<HTMLButtonElement>;
+
+  // Toggle dropdown on profile button click
+  profileButton.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = profileDropdown.style.display === 'block';
+
+    if (isVisible) {
+      profileDropdown.style.display = 'none';
+      profileButton.setAttribute('aria-expanded', 'false');
+    } else {
+      profileDropdown.style.display = 'block';
+      profileButton.setAttribute('aria-expanded', 'true');
+    }
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!profileButton.contains(target) && !profileDropdown.contains(target)) {
+      profileDropdown.style.display = 'none';
+      profileButton.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Handle menu item clicks
+  menuItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = item.getAttribute('data-action');
+
+      // Log to console (placeholder functionality)
+      console.log(`Profile menu action: ${action}`);
+
+      // Show temporary message to user
+      const actionNames: Record<string, string> = {
+        'view-profile': 'View Profile',
+        'account-settings': 'Account Settings',
+        'help-support': 'Help & Support',
+        'about': 'About'
+      };
+
+      const actionName = actionNames[action || ''] || action;
+      alert(`${actionName} feature coming soon!`);
+
+      // Close dropdown
+      profileDropdown.style.display = 'none';
+      profileButton.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // Close dropdown on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && profileDropdown.style.display === 'block') {
+      profileDropdown.style.display = 'none';
+      profileButton.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
 
 // Query Input Functionality
 function initializeQueryInput() {

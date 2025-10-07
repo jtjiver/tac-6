@@ -1,7 +1,9 @@
 {
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(mkdir:*)",
+      "Bash(mkdir:*&&:*)",
       "Bash(uv:*)",
       "Bash(find:*)",
       "Bash(mv:*)",
@@ -9,10 +11,52 @@
       "Bash(npm:*)",
       "Bash(ls:*)",
       "Bash(cp:*)",
-      "Write",
-      "Bash(./scripts/copy_dot_env.sh:*)",
+      "Bash(cat:*)",
       "Bash(chmod:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(jq:*)",
+      "Bash(nohup:*)",
+      "Bash(sh:*)",
+      "Bash(date:*)",
+      "Bash(echo:*)",
+      "Bash(md5sum:*)",
+      "Write",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(bun:*)",
+      "Bash(node:*)",
+      "Bash(./scripts:*)",
+      "Bash(scripts:*)",
+      "Bash(LOG_FILE=:*)",
+      "Bash(CURRENT_BRANCH=:*)",
+      "Bash(BRANCH_NAME=:*)",
+      "Bash(REMOTE_STATUS=:*)",
+      "Bash(PLAN_FILE=:*)",
+      "Bash(SPEC_FILE=:*)",
+      "Bash(LOG_FILE=:*&&:*)",
+      "Bash(CURRENT_BRANCH=:*&&:*)",
+      "Bash(SPEC_FILE=:*&&:*)",
+      "Bash(jq:*&&:*)",
+      "Bash(echo:*>>:*agents:*)",
+      "Bash(echo:*>>:*$LOG_FILE:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_close",
+      "mcp__playwright__browser_handle_dialog",
+      "SlashCommand(/chore:*)",
+      "SlashCommand(/bug:*)",
+      "SlashCommand(/feature:*)",
+      "SlashCommand(/implement:*)",
+      "SlashCommand(/commit)",
+      "SlashCommand(/test:*)",
+      "SlashCommand(/review:*)",
+      "SlashCommand(/pull_request)",
+      "SlashCommand(/adw_guide:*)"
     ],
     "deny": [
       "Bash(git push --force:*)",
@@ -20,6 +64,10 @@
       "Bash(rm -rf:*)"
     ]
   },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "playwright"
+  ],
   "hooks": {
     "PreToolUse": [
       {
