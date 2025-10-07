@@ -333,6 +333,44 @@ h2 {
   color: var(--error-color);
 }
 
+/* Download Button */
+.download-button {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  margin-right: 0.5rem;
+}
+
+.download-button:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.download-button:active {
+  transform: translateY(0);
+}
+
+.download-button.loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Table actions container */
+.table-actions {
+  display: flex;
+  align-items: center;
+}
+
 /* Loading States */
 .loading {
   display: inline-block;
