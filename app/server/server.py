@@ -374,12 +374,15 @@ async def export_table(table_name: str) -> StreamingResponse:
             conn,
             "SELECT * FROM {table}",
             identifier_params={'table': table_name}
-        )
+        ).fetchall()
 
         # Get column names
-        cursor = conn.cursor()
-        cursor.execute(f"PRAGMA table_info({table_name})")
-        columns = [row[1] for row in cursor.fetchall()]
+        cursor_info = execute_query_safely(
+            conn,
+            "PRAGMA table_info({table})",
+            identifier_params={'table': table_name}
+        )
+        columns = [row[1] for row in cursor_info.fetchall()]
         conn.close()
 
         # Convert results to list of dictionaries
