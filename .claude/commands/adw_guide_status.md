@@ -49,6 +49,7 @@ For each workflow found, display in a user-friendly format:
 **Files:**
 - Plan: `{plan_file}`
 - State: `agents/{adw_id}/adw_state.json`
+- Logs: `agents/{adw_id}/logs/`
 ```
 
 ### Step 3: Show Phase Indicators
@@ -125,6 +126,13 @@ Found 2 interactive workflows:
 **Files:**
 - Plan: `specs/issue-1-adw-abc12345-table-exports.md`
 - State: `agents/abc12345/adw_state.json`
+- Logs: `agents/abc12345/logs/` (4 log files)
+
+**Recent logs:**
+- `adw_guide_plan_1696694400.log`
+- `adw_guide_build_1696698000.log`
+- `adw_guide_test_1696701600.log`
+- `adw_guide_review_1696705200.log`
 
 **Next step:** Run `/adw_guide_pr abc12345` to create pull request
 

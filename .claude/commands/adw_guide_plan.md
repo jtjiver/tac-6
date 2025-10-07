@@ -4,15 +4,18 @@ Interactive guide to help you through the ADW planning phase without API costs.
 
 ## Instructions
 
-**IMPORTANT:** This is a guide command that helps you run the workflow manually. It does NOT make subprocess calls or programmatic API calls. Everything you do here is covered by your Claude Pro subscription at zero additional cost.
+**IMPORTANT:** This is an interactive guide that runs commands automatically where there's only one logical next step. Everything you do here is covered by your Claude Pro subscription at zero additional cost.
 
 Follow these steps to complete the planning phase:
 
 ### Step 1: Gather Information
 
-1. Ask the user: "What is the GitHub issue number you want to work on?"
-2. Fetch the issue from GitHub using `gh issue view <issue-number> --json number,title,body`
-3. Parse the issue JSON
+Ask the user: "What is the GitHub issue number you want to work on?"
+
+Once provided, automatically fetch the issue:
+- Run `gh issue view <issue-number> --json number,title,body`
+- Parse the issue JSON
+- Store issue details for next steps
 
 ### Step 2: Classify the Issue
 
@@ -38,18 +41,28 @@ Based on the issue classification and details, generate a semantic branch name:
   - `bug-issue-42-adw-xyz98765-fix-sql-injection`
   - `chore-issue-7-adw-def45678-update-dependencies`
 
-### Step 5: Create Branch
+### Step 5: Create Branch and Initialize Logging
 
-Tell the user to run:
+Automatically create the branch and set up logging:
+
 ```bash
+# Create branch
 git checkout -b {branch-name}
+
+# Initialize logging directory
+mkdir -p agents/{adw_id}/logs
+LOG_FILE="agents/{adw_id}/logs/adw_guide_plan_$(date +%s).log"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Planning phase started for issue #{issue_number}" >> $LOG_FILE
 ```
 
-Wait for confirmation that the branch is created.
+Post status update to GitHub issue:
+```bash
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Starting planning phase"
+```
 
 ### Step 6: Create State File
 
-Create an interactive state file to track progress:
+Automatically create the state file to track progress:
 
 ```bash
 mkdir -p agents/{adw_id}
@@ -65,44 +78,58 @@ cat > agents/{adw_id}/adw_state.json << EOF
 EOF
 ```
 
-Tell the user: "✅ State file created: `agents/{adw_id}/adw_state.json`"
+Confirm to user: "✅ State file created: `agents/{adw_id}/adw_state.json`"
 
-### Step 7: Guide User to Create Plan
-
-Based on the classification, tell the user:
-
-**For Features:**
-"Now let's create the implementation plan. Run the following command:
-```
-/{classification} {issue_number} {adw_id} '{issue_json}'
+Post status update:
+```bash
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Working on branch: \`{branch_name}\`"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] State file created" >> $LOG_FILE
 ```
 
-Example: `/feature 1 abc12345 '{"number":1,"title":"...","body":"..."}'`"
+### Step 7: Create Implementation Plan
 
-**For Bugs:**
-"Now let's create the bug fix plan. Run the following command:
+Automatically run the appropriate planning slash command based on classification:
+
+Post status update:
+```bash
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Issue classified as: {classification}"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running {classification} planning command" >> $LOG_FILE
 ```
-/bug {issue_number} {adw_id} '{issue_json}'
-```"
 
-**For Chores:**
-"Now let's create the chore plan. Run the following command:
+Run the planning command (auto-executed):
+- For Features: `/feature {issue_number} {adw_id} '{issue_json}'`
+- For Bugs: `/bug {issue_number} {adw_id} '{issue_json}'`
+- For Chores: `/chore {issue_number} {adw_id} '{issue_json}'`
+
+This will automatically create the implementation plan file.
+
+### Step 8: Complete Planning Phase
+
+After the plan is created, post completion status and finalize logging:
+
+```bash
+# Find the created plan file
+PLAN_FILE=$(find specs -name "issue-{issue_number}-adw-{adw_id}-*.md" | head -1)
+
+# Post completion status to GitHub
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_sdlc_planner: ✅ Plan file created: \`$PLAN_FILE\`"
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Planning phase completed"
+
+# Log completion
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Planning phase completed - Plan file: $PLAN_FILE" >> $LOG_FILE
 ```
-/chore {issue_number} {adw_id} '{issue_json}'
-```"
 
-Wait for the user to confirm the plan was created successfully.
-
-### Step 8: Update State and Report Next Steps
-
-After the plan is created, tell the user:
+Tell the user:
 
 "✅ Planning phase complete!
 
 **What was created:**
 - Branch: `{branch_name}`
 - State file: `agents/{adw_id}/adw_state.json`
-- Plan file: `specs/issue-{issue_number}-adw-{adw_id}-*.md`
+- Plan file: `$PLAN_FILE`
+- Log file: `agents/{adw_id}/logs/adw_guide_plan_*.log`
+
+**GitHub issue updated:** Issue #{issue_number} has been updated with progress
 
 **Next steps:**
 1. Review the plan file in `specs/`
@@ -110,14 +137,39 @@ After the plan is created, tell the user:
 
 **Cost so far:** $0 (covered by Claude Pro) ✨"
 
-## What NOT to Do
+## Logging and Issue Updates
 
-- **DO NOT** call subprocess.run()
-- **DO NOT** call execute_template() or prompt_claude_code()
-- **DO NOT** make programmatic API calls
-- **DO** guide the user on what commands to run
-- **DO** wait for user confirmation at each step
-- **DO** explain what's happening and why
+### GitHub Issue Comment Format
+All status updates follow this format:
+```
+[ADW-BOT] {adw_id}_{agent_name}: {emoji} {message}
+```
+
+Agent names used in planning phase:
+- `ops` - Operational messages (starting, branch creation, completion)
+- `sdlc_planner` - Planning-specific messages
+
+Common emojis:
+- ✅ Success/completion
+- ❌ Error
+- ⚠️ Warning
+- 🔍 Information
+
+### Logging Pattern
+Logs are created in `agents/{adw_id}/logs/adw_guide_plan_{timestamp}.log` with entries like:
+```
+[2025-10-07T16:30:00Z] Planning phase started for issue #4
+[2025-10-07T16:30:15Z] State file created
+[2025-10-07T16:31:45Z] Planning phase completed - Plan file: specs/issue-4-adw-abc12345-feature.md
+```
+
+## What to Do
+
+- **DO** automatically run commands when there's only one logical next step
+- **DO** post status updates to GitHub issues
+- **DO** create logs in `agents/{adw_id}/logs/`
+- **DO** keep the user informed with clear progress messages
+- **DO** explain what's happening at each stage
 
 ## Variables
 

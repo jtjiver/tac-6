@@ -8,110 +8,139 @@ Interactive guide to help you through the ADW testing phase without API costs.
 
 ## Instructions
 
-**IMPORTANT:** This is a guide command that helps you run the workflow manually. It does NOT make subprocess calls or programmatic API calls. Everything you do here is covered by your Claude Pro subscription at zero additional cost.
+**IMPORTANT:** This is an interactive guide that runs commands automatically where there's only one logical next step. Everything you do here is covered by your Claude Pro subscription at zero additional cost.
 
-### Step 1: Load State
+### Step 1: Load State and Initialize Logging
 
 Load state from `agents/{adw_id}/adw_state.json` or find the latest interactive state.
+
+Initialize logging:
+```bash
+mkdir -p agents/{adw_id}/logs
+LOG_FILE="agents/{adw_id}/logs/adw_guide_test_$(date +%s).log"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Testing phase started for issue #{issue_number}" >> $LOG_FILE
+```
+
+Post status to GitHub:
+```bash
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Starting testing phase"
+```
 
 Display current workflow info to the user.
 
 ### Step 2: Verify Branch
 
-Ensure user is on the correct branch with `git branch --show-current`.
+Automatically verify correct branch:
+```bash
+CURRENT_BRANCH=$(git branch --show-current)
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] On branch: $CURRENT_BRANCH" >> $LOG_FILE
+```
 
 ### Step 3: Run Backend Tests
 
-Tell the user:
-
-"Let's run the backend tests:
+Automatically run backend tests:
 ```bash
-cd app/server
-uv run pytest
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ✅ Running backend tests"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running backend tests" >> $LOG_FILE
+
+cd app/server && uv run pytest
+TEST_RESULT=$?
+
+if [ $TEST_RESULT -eq 0 ]; then
+  gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ✅ Backend tests: PASSED"
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Backend tests PASSED" >> $LOG_FILE
+else
+  gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ❌ Backend tests: FAILED"
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Backend tests FAILED" >> $LOG_FILE
+fi
 ```
-
-This will run all Python tests to ensure your changes don't break existing functionality."
-
-Wait for the user to report results.
 
 ### Step 4: Handle Test Failures (If Any)
 
-If tests fail, tell the user:
+If tests fail, automatically attempt to fix (up to 3 attempts):
 
-"Some tests failed. You have two options:
+```bash
+if [ $TEST_RESULT -ne 0 ]; then
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Attempting to resolve test failures" >> $LOG_FILE
+  gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ⚠️ Attempting to resolve test failures"
 
-**Option 1: Let Claude fix them**
-Run: `/resolve_failed_test`
+  # Run /test command which handles retries automatically
+  # This is covered by your Claude Pro subscription
+fi
+```
 
-This will:
+Run `/test` if failures detected (auto-executed) - this will:
 1. Analyze the test failures
 2. Fix the issues
 3. Re-run the tests
 4. Repeat up to 3 times if needed
 
-**Option 2: Fix manually**
-Review the test failures and fix them yourself.
+### Step 5: Run Frontend Type Checks
 
-Which would you like to do?"
-
-### Step 5: Run Frontend Tests
-
-Tell the user:
-
-"Now let's validate the frontend code:
+Automatically run TypeScript type checking:
 ```bash
-cd app/client
-bun tsc --noEmit
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ✅ Running frontend type checks"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running TypeScript checks" >> $LOG_FILE
+
+cd app/client && bun tsc --noEmit
+TS_RESULT=$?
+
+if [ $TS_RESULT -eq 0 ]; then
+  gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ✅ Frontend type checks: PASSED"
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] TypeScript checks PASSED" >> $LOG_FILE
+else
+  gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ❌ Frontend type checks: FAILED"
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] TypeScript checks FAILED" >> $LOG_FILE
+fi
 ```
-
-This checks for TypeScript type errors."
-
-Wait for confirmation.
 
 ### Step 6: Run Frontend Build
 
-Tell the user:
-
-"Let's ensure the frontend builds successfully:
+Automatically validate frontend builds:
 ```bash
-cd app/client
-bun run build
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running frontend build" >> $LOG_FILE
+
+cd app/client && bun run build
+BUILD_RESULT=$?
+
+if [ $BUILD_RESULT -eq 0 ]; then
+  gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ✅ Frontend build: SUCCESS"
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Frontend build SUCCESS" >> $LOG_FILE
+else
+  gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ❌ Frontend build: FAILED"
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Frontend build FAILED" >> $LOG_FILE
+fi
 ```
-
-This validates that all code compiles correctly."
-
-Wait for confirmation.
 
 ### Step 7: Run E2E Tests (If Applicable)
 
-Check if the plan file mentions E2E tests. If yes, tell the user:
+Check if the plan file mentions E2E tests. If yes:
 
-"The plan includes E2E tests. Let's run them:
-
-First, read the E2E test guide:
-```
-/test_e2e
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Checking for E2E test requirements" >> $LOG_FILE
 ```
 
-This will:
-1. Show you how to run E2E tests
-2. Guide you through the browser-based testing
-3. Help you validate the feature works end-to-end"
+Ask user: "The plan includes E2E tests. Would you like to run them now?"
 
-### Step 8: Update State
+If yes, run `/test_e2e` which will:
+1. Start the application services
+2. Run browser-based tests
+3. Capture screenshots
+4. Stop services
+5. Report results
 
-After all tests pass, tell the user:
+### Step 8: Update State and Complete
 
-"✅ All tests passing!
+After all tests pass, automatically update state:
 
-Let's update the workflow state:
 ```bash
 jq '.current_phase = "testing_complete"' \
-  agents/{adw_id}/adw_state.json > agents/{adw_id}/adw_state.json.tmp
-mv agents/{adw_id}/adw_state.json.tmp agents/{adw_id}/adw_state.json
-```"
+  agents/{adw_id}/adw_state.json > agents/{adw_id}/adw_state.json.tmp && \
+  mv agents/{adw_id}/adw_state.json.tmp agents/{adw_id}/adw_state.json
 
-### Step 9: Report Next Steps
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Testing phase completed"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Testing phase completed" >> $LOG_FILE
+```
 
 Tell the user:
 
@@ -123,36 +152,51 @@ Tell the user:
 - ✅ Frontend build successful
 - ✅ E2E tests passing (if applicable)
 
+**Log file:** `agents/{adw_id}/logs/adw_guide_test_*.log`
+
+**GitHub issue updated:** Issue #{issue_number} has been updated with test results
+
 **Next steps:**
 1. Review implementation: `/adw_guide_review {adw_id}`
 2. Or skip to PR: `/adw_guide_pr {adw_id}`
 
 **Cost so far:** $0 (covered by Claude Pro) ✨"
 
-## Alternative: Quick Test Command
+## Logging and Issue Updates
 
-If the user wants to run the `/test` slash command directly, tell them:
-
-"You can also run the automated test workflow:
+### GitHub Issue Comment Format
+All status updates follow this format:
 ```
-/test
+[ADW-BOT] {adw_id}_{agent_name}: {emoji} {message}
 ```
 
-This will automatically:
-1. Run the test suite
-2. Attempt to fix failures (up to 3 times)
-3. Report results
+Agent names used in testing phase:
+- `ops` - Operational messages (starting, completion)
+- `test_runner` - Test execution messages
 
-This is still covered by your Claude Pro subscription at zero cost since you're running it interactively."
+Common emojis:
+- ✅ Success/passing
+- ❌ Failure
+- ⚠️ Warning/retrying
 
-## What NOT to Do
+### Logging Pattern
+Logs are created in `agents/{adw_id}/logs/adw_guide_test_{timestamp}.log` with entries like:
+```
+[2025-10-07T16:40:00Z] Testing phase started for issue #4
+[2025-10-07T16:40:15Z] Running backend tests
+[2025-10-07T16:41:00Z] Backend tests PASSED
+[2025-10-07T16:41:05Z] Running TypeScript checks
+[2025-10-07T16:41:30Z] TypeScript checks PASSED
+[2025-10-07T16:41:35Z] Testing phase completed
+```
 
-- **DO NOT** call subprocess.run()
-- **DO NOT** call execute_template() or prompt_claude_code()
-- **DO NOT** make programmatic API calls
-- **DO** guide the user on what commands to run
-- **DO** wait for user confirmation at each step
-- **DO** explain what's happening and why
+## What to Do
+
+- **DO** automatically run all test commands
+- **DO** post test results to GitHub issues
+- **DO** attempt automatic fixes for test failures
+- **DO** create detailed test logs
+- **DO** wait for user confirmation on E2E tests (may require visual validation)
 
 ## Error Handling
 
@@ -161,3 +205,9 @@ If no state file is found:
 
 If user is not on correct branch:
 "You're not on the correct branch. Please checkout: `{branch_name}`"
+
+If tests fail after retry attempts:
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ERROR: Tests failed after retries" >> $LOG_FILE
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ❌ Tests failed after multiple attempts - manual intervention needed"
+```
