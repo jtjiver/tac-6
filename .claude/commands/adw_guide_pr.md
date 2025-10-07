@@ -8,96 +8,115 @@ Interactive guide to help you create a pull request without API costs.
 
 ## Instructions
 
-**IMPORTANT:** This is a guide command that helps you run the workflow manually. It does NOT make subprocess calls or programmatic API calls. Everything you do here is covered by your Claude Pro subscription at zero additional cost.
+**IMPORTANT:** This is an interactive guide that runs commands automatically where there's only one logical next step. Everything you do here is covered by your Claude Pro subscription at zero additional cost.
 
-### Step 1: Load State
+### Step 1: Load State and Initialize Logging
 
 Load state from `agents/{adw_id}/adw_state.json` or find the latest interactive state.
+
+Initialize logging:
+```bash
+mkdir -p agents/{adw_id}/logs
+LOG_FILE="agents/{adw_id}/logs/adw_guide_pr_$(date +%s).log"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] PR phase started for issue #{issue_number}" >> $LOG_FILE
+```
+
+Post status to GitHub:
+```bash
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Starting PR phase"
+```
 
 Display current workflow info.
 
 ### Step 2: Verify Prerequisites
 
-Check that:
+Automatically check that:
 1. User is on correct branch
 2. Implementation is complete
 3. All changes are committed
-4. Tests are passing
 
-Ask user to confirm: "Are all your changes committed and ready to push?"
+```bash
+# Check for uncommitted changes
+if [[ -n $(git status -s) ]]; then
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] WARNING: Uncommitted changes detected" >> $LOG_FILE
+  # Show user what needs to be committed
+  git status
+fi
+```
 
 ### Step 3: Check Remote Branch Status
 
-Tell the user to check if branch is already pushed:
+Automatically check if branch needs to be pushed:
 ```bash
-git status
+BRANCH_NAME=$(git branch --show-current)
+REMOTE_STATUS=$(git status | grep -c "Your branch is ahead\|Your branch and")
+
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Checking remote branch status" >> $LOG_FILE
 ```
 
-Look for messages like:
-- "Your branch is ahead of 'origin/{branch_name}'"
-- "Your branch is up to date with 'origin/{branch_name}'"
-- "Your branch and 'origin/{branch_name}' have diverged"
+### Step 4: Push Branch
 
-### Step 4: Push Branch (If Needed)
+Automatically push branch to remote if needed:
 
-If branch is not pushed or is ahead, tell the user:
-
-"Let's push your branch to the remote repository:
 ```bash
-git push -u origin {branch_name}
+if [ "$REMOTE_STATUS" -gt 0 ] || ! git rev-parse --verify origin/$BRANCH_NAME 2>/dev/null; then
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Pushing branch to remote" >> $LOG_FILE
+
+  git push -u origin $BRANCH_NAME
+
+  gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Branch pushed to remote"
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Branch pushed successfully" >> $LOG_FILE
+else
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Branch already up to date with remote" >> $LOG_FILE
+fi
 ```
 
-This will:
-1. Push your commits to GitHub
-2. Set up tracking between local and remote branch"
+### Step 5: Create Pull Request
 
-Wait for confirmation that push succeeded.
+Automatically run the pull request command:
 
-### Step 5: Guide User to Create PR
-
-Tell the user:
-
-"Now let's create a pull request using the `/pull_request` command:
+```bash
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_pr_creator: ✅ Creating pull request"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running /pull_request command" >> $LOG_FILE
 ```
-/pull_request
-```
+
+Run `/pull_request` (auto-executed)
 
 This will:
 1. Analyze your commits and changes
 2. Generate a comprehensive PR description
 3. Create the PR with proper formatting
 4. Link to the original issue
+5. Return the PR URL
 
-**Note:** This runs inside Claude Code interactively, so it's covered by your Claude Pro subscription at zero additional cost."
+### Step 6: Capture PR URL
 
-Wait for PR creation to complete.
-
-### Step 6: Get PR URL
-
-After PR is created, the `/pull_request` command should output the PR URL.
-
-Display to user:
-"✅ Pull request created!"
-
-### Step 7: Update State and Create GitHub Comment
-
-Tell the user to update state and notify the issue:
-
-"Let's update the workflow state and notify the issue:
-
-**Update state:**
+After PR is created:
 ```bash
-jq '.current_phase = "complete" | .pr_created = true' \
-  agents/{adw_id}/adw_state.json > agents/{adw_id}/adw_state.json.tmp
-mv agents/{adw_id}/adw_state.json.tmp agents/{adw_id}/adw_state.json
+# PR URL will be returned by /pull_request command
+PR_URL="<captured from command output>"
+
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] PR created: $PR_URL" >> $LOG_FILE
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_pr_creator: ✅ Pull request created: $PR_URL"
 ```
 
-**Add comment to issue:**
-```bash
-gh issue comment {issue_number} --body \"✅ Implementation complete!
+### Step 7: Update State and Create Completion Comment
 
-**Pull Request:** #{pr_number}
-**Branch:** \`{branch_name}\`
+Automatically update state and post completion message:
+
+```bash
+# Update state
+jq '.current_phase = "complete" | .pr_created = true | .pr_url = "'"$PR_URL"'"' \
+  agents/{adw_id}/adw_state.json > agents/{adw_id}/adw_state.json.tmp && \
+  mv agents/{adw_id}/adw_state.json.tmp agents/{adw_id}/adw_state.json
+
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] State updated to complete" >> $LOG_FILE
+
+# Post completion comment to issue
+gh issue comment {issue_number} --body "✅ Implementation complete!
+
+**Pull Request:** $PR_URL
+**Branch:** \`$BRANCH_NAME\`
 **ADW ID:** \`{adw_id}\`
 
 Completed using ADW interactive workflow at zero API cost.
@@ -109,8 +128,11 @@ Completed using ADW interactive workflow at zero API cost.
 - ✅ Review
 - ✅ Pull Request
 
-Ready for review!\"
-```"
+Ready for review!"
+
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Workflow complete - Ready for review"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] PR phase completed" >> $LOG_FILE
+```
 
 ### Step 8: Report Completion
 
@@ -120,8 +142,8 @@ Tell the user:
 
 **Summary:**
 - Issue: #{issue_number}
-- Branch: `{branch_name}`
-- Pull Request: [View PR]({pr_url})
+- Branch: `$BRANCH_NAME`
+- Pull Request: $PR_URL
 - ADW ID: `{adw_id}`
 
 **What was accomplished:**
@@ -131,30 +153,71 @@ Tell the user:
 4. ✅ Implementation reviewed
 5. ✅ Pull request created
 
+**Log file:** `agents/{adw_id}/logs/adw_guide_pr_*.log`
+
+**GitHub issue updated:** Issue #{issue_number} has been notified of completion
+
 **Total cost:** $0 (covered by Claude Pro subscription) ✨
 
 **Next steps:**
-1. Review the PR on GitHub
+1. Review the PR on GitHub: $PR_URL
 2. Address any reviewer feedback
 3. Merge when approved!
 
-You can resume this workflow anytime with: `/adw_guide_build {adw_id}` (or any other phase)
+You can resume this workflow anytime with the appropriate `/adw_guide_*` command.
 
 Great work! 🚀"
 
+## Logging and Issue Updates
+
+### GitHub Issue Comment Format
+All status updates follow this format:
+```
+[ADW-BOT] {adw_id}_{agent_name}: {emoji} {message}
+```
+
+Agent names used in PR phase:
+- `ops` - Operational messages (starting, completion)
+- `pr_creator` - PR creation messages
+
+Common emojis:
+- ✅ Success/completion
+- ❌ Error
+- 🔍 Information
+
+### Logging Pattern
+Logs are created in `agents/{adw_id}/logs/adw_guide_pr_{timestamp}.log` with entries like:
+```
+[2025-10-07T16:50:00Z] PR phase started for issue #4
+[2025-10-07T16:50:15Z] Checking remote branch status
+[2025-10-07T16:50:30Z] Pushing branch to remote
+[2025-10-07T16:51:00Z] Running /pull_request command
+[2025-10-07T16:51:45Z] PR created: https://github.com/owner/repo/pull/123
+[2025-10-07T16:51:50Z] State updated to complete
+[2025-10-07T16:51:55Z] PR phase completed
+```
+
+## What to Do
+
+- **DO** automatically push the branch to remote
+- **DO** automatically create the pull request
+- **DO** post PR URL and completion message to GitHub issue
+- **DO** update state to mark workflow complete
+- **DO** create detailed PR creation logs
+
 ## Alternative: Manual PR Creation
 
-If the user prefers to create the PR manually, provide guidance:
+If the user prefers to create the PR manually:
 
 "You can also create the PR manually:
 
 **Option 1: Using GitHub CLI**
 ```bash
-gh pr create --title \"feat: {short-description}\" --body \"[PR description]\"
+gh pr create --title \"<type>: <description>\" --body \"<PR description>\"
 ```
 
 **Option 2: Using GitHub Web UI**
-1. Go to: https://github.com/{owner}/{repo}/pull/new/{branch_name}
+1. Go to: https://github.com/{owner}/{repo}/pull/new/$BRANCH_NAME
 2. Fill in title and description
 3. Link to issue #{issue_number}
 4. Create pull request
@@ -181,22 +244,28 @@ Closes #{issue_number}
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```"
 
-## What NOT to Do
-
-- **DO NOT** call subprocess.run()
-- **DO NOT** call execute_template() or prompt_claude_code()
-- **DO NOT** make programmatic API calls
-- **DO** guide the user on what commands to run
-- **DO** wait for user confirmation at each step
-- **DO** explain what's happening and why
-
 ## Error Handling
 
 If branch is not pushed:
-"Branch not pushed to remote. Please push first with: `git push -u origin {branch_name}`"
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ERROR: Failed to push branch" >> $LOG_FILE
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ❌ Failed to push branch to remote"
+```
 
 If there are uncommitted changes:
-"You have uncommitted changes. Please commit them first with: `/commit` or `git commit`"
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ERROR: Uncommitted changes detected" >> $LOG_FILE
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ⚠️ Uncommitted changes detected - please commit first"
+```
 
 If PR already exists for branch:
-"A pull request already exists for this branch: [PR URL]"
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] WARNING: PR already exists" >> $LOG_FILE
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ⚠️ A pull request already exists for this branch"
+```
+
+If PR creation fails:
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ERROR: PR creation failed" >> $LOG_FILE
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_pr_creator: ❌ Failed to create pull request - check logs"
+```

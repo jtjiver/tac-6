@@ -8,11 +8,23 @@ Interactive guide to help you through the ADW review phase without API costs.
 
 ## Instructions
 
-**IMPORTANT:** This is a guide command that helps you run the workflow manually. It does NOT make subprocess calls or programmatic API calls. Everything you do here is covered by your Claude Pro subscription at zero additional cost.
+**IMPORTANT:** This is an interactive guide that runs commands automatically where there's only one logical next step. Everything you do here is covered by your Claude Pro subscription at zero additional cost.
 
-### Step 1: Load State
+### Step 1: Load State and Initialize Logging
 
 Load state from `agents/{adw_id}/adw_state.json` or find the latest interactive state.
+
+Initialize logging:
+```bash
+mkdir -p agents/{adw_id}/logs
+LOG_FILE="agents/{adw_id}/logs/adw_guide_review_$(date +%s).log"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Review phase started for issue #{issue_number}" >> $LOG_FILE
+```
+
+Post status to GitHub:
+```bash
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Starting review phase"
+```
 
 Display current workflow info including the plan file path.
 
@@ -21,27 +33,29 @@ Display current workflow info including the plan file path.
 Check that:
 1. User is on correct branch
 2. Implementation is complete
-3. Tests are passing (ask user to confirm)
+3. Tests are passing (read from state or logs)
 
-If tests haven't been run, suggest: "Would you like to run tests first? Use `/adw_guide_test {adw_id}`"
+Display status to user.
 
 ### Step 3: Find Specification File
 
-Locate the spec file from the planning phase:
-```
-specs/issue-{issue_number}-adw-{adw_id}-*.md
+Automatically locate the spec file from the planning phase:
+```bash
+SPEC_FILE=$(find specs -name "issue-{issue_number}-adw-{adw_id}-*.md" | head -1)
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Using spec file: $SPEC_FILE" >> $LOG_FILE
 ```
 
-Display: "Found specification: `{spec_file}`"
+Display: "Found specification: `$SPEC_FILE`"
 
-### Step 4: Guide User to Review
+### Step 4: Run Implementation Review
 
-Tell the user:
-
-"Now let's review the implementation against the specification:
+Automatically run the review command:
+```bash
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_reviewer: ✅ Reviewing implementation against specification"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running /review command" >> $LOG_FILE
 ```
-/review {spec_file}
-```
+
+Run `/review $SPEC_FILE` (auto-executed)
 
 This will:
 1. Compare your implementation to the specification
@@ -50,71 +64,72 @@ This will:
 4. Take screenshots if the feature has UI components
 5. Create a review report
 
-**Note:** This runs inside Claude Code interactively, so it's covered by your Claude Pro subscription at zero additional cost."
-
-Wait for the review to complete.
-
 ### Step 5: Analyze Review Results
 
-After review completes, tell the user:
+After review completes, automatically parse results:
 
-"Let's analyze the review results.
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Review completed" >> $LOG_FILE
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_reviewer: ✅ Implementation reviewed"
+```
 
-The review checked:
-- ✅ All requirements implemented
-- ✅ Code follows best practices
-- ✅ Tests are comprehensive
-- ✅ Documentation is clear
-- ✅ UI works as expected (if applicable)
-
-Did the review identify any blockers or issues?"
+Display review summary to user:
+- Requirements met
+- Code quality
+- Test coverage
+- Documentation status
+- Any blockers or issues found
 
 ### Step 6: Handle Review Issues (If Any)
 
-If the review found blockers, tell the user:
+If the review found blockers, automatically attempt to resolve them:
 
-"The review identified some blockers that need to be fixed:
+```bash
+if [ "$BLOCKERS_FOUND" = "true" ]; then
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Blockers found - attempting resolution" >> $LOG_FILE
+  gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_reviewer: ⚠️ Review identified issues - resolving"
 
-[List the blockers from review]
+  # Auto-implement fixes for blockers
+  # This runs inside Claude Code interactively
+fi
+```
 
-You have two options:
-
-**Option 1: Fix automatically**
-Claude can attempt to fix these issues. Would you like me to implement the fixes?
-
-**Option 2: Fix manually**
-You can fix the issues yourself and then re-run the review.
-
-Which would you like to do?"
-
-If user chooses automatic fixes, implement them and then suggest re-running review.
+After resolution:
+```bash
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_reviewer: ✅ Review issues resolved"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Issues resolved" >> $LOG_FILE
+```
 
 ### Step 7: Commit Review Artifacts
 
-After review is complete and satisfactory, tell the user:
+Automatically commit the review artifacts:
 
-"Let's commit the review artifacts:
 ```bash
+# Add review artifacts
 git add agents/{adw_id}/reviewer/
-git commit -m \"review: complete implementation review for issue #{issue_number}
+
+# Create commit
+git commit -m "review: complete implementation review for issue #{issue_number}
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude <noreply@anthropic.com>\"
-```"
+Co-Authored-By: Claude <noreply@anthropic.com>"
 
-### Step 8: Update State
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Review artifacts committed" >> $LOG_FILE
+```
 
-Tell the user:
+### Step 8: Update State and Complete
 
-"Update the workflow state:
+Automatically update state and finalize:
+
 ```bash
 jq '.current_phase = "review_complete"' \
-  agents/{adw_id}/adw_state.json > agents/{adw_id}/adw_state.json.tmp
-mv agents/{adw_id}/adw_state.json.tmp agents/{adw_id}/adw_state.json
-```"
+  agents/{adw_id}/adw_state.json > agents/{adw_id}/adw_state.json.tmp && \
+  mv agents/{adw_id}/adw_state.json.tmp agents/{adw_id}/adw_state.json
 
-### Step 9: Report Next Steps
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Review phase completed"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Review phase completed" >> $LOG_FILE
+```
 
 Tell the user:
 
@@ -123,22 +138,62 @@ Tell the user:
 **What was done:**
 - Implementation reviewed against specification
 - All requirements verified
-- Issues identified and resolved
+- Issues identified and resolved (if any)
 - Review artifacts committed
 
+**Review report:** `agents/{adw_id}/reviewer/`
+
+**Log file:** `agents/{adw_id}/logs/adw_guide_review_*.log`
+
+**GitHub issue updated:** Issue #{issue_number} has been updated with review results
+
 **Next steps:**
-1. Generate documentation (optional): `/adw_guide_document {adw_id}`
-2. Create pull request: `/adw_guide_pr {adw_id}`
+1. Create pull request: `/adw_guide_pr {adw_id}`
 
 **Cost so far:** $0 (covered by Claude Pro) ✨"
 
+## Logging and Issue Updates
+
+### GitHub Issue Comment Format
+All status updates follow this format:
+```
+[ADW-BOT] {adw_id}_{agent_name}: {emoji} {message}
+```
+
+Agent names used in review phase:
+- `ops` - Operational messages (starting, completion)
+- `reviewer` - Review-specific messages
+
+Common emojis:
+- ✅ Success/completion
+- ❌ Error
+- ⚠️ Warning/issues found
+
+### Logging Pattern
+Logs are created in `agents/{adw_id}/logs/adw_guide_review_{timestamp}.log` with entries like:
+```
+[2025-10-07T16:45:00Z] Review phase started for issue #4
+[2025-10-07T16:45:15Z] Using spec file: specs/issue-4-adw-abc12345-feature.md
+[2025-10-07T16:46:30Z] Review completed
+[2025-10-07T16:47:00Z] Review artifacts committed
+[2025-10-07T16:47:05Z] Review phase completed
+```
+
+## What to Do
+
+- **DO** automatically run the review command
+- **DO** post review results to GitHub issues
+- **DO** automatically resolve identified blockers
+- **DO** create comprehensive review logs
+- **DO** commit review artifacts automatically
+
 ## Alternative: Manual Review
 
-If the user prefers to review manually, tell them:
+If the user prefers to review manually:
 
 "You can also review the implementation yourself:
 
-1. Open the specification: `specs/issue-{issue_number}-adw-{adw_id}-*.md`
+1. Open the specification: `$SPEC_FILE`
 2. Check each requirement is implemented
 3. Test the functionality manually
 4. Verify edge cases are handled
@@ -146,19 +201,19 @@ If the user prefers to review manually, tell them:
 
 Then proceed to: `/adw_guide_pr {adw_id}`"
 
-## What NOT to Do
-
-- **DO NOT** call subprocess.run()
-- **DO NOT** call execute_template() or prompt_claude_code()
-- **DO NOT** make programmatic API calls
-- **DO** guide the user on what commands to run
-- **DO** wait for user confirmation at each step
-- **DO** explain what's happening and why
-
 ## Error Handling
 
 If spec file not found:
-"Specification file not found. Ensure planning phase completed successfully."
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ERROR: Spec file not found" >> $LOG_FILE
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ❌ Specification file not found - ensure planning completed"
+```
 
 If implementation not complete:
 "Implementation doesn't appear to be complete. Run `/adw_guide_build {adw_id}` first."
+
+If blockers cannot be resolved:
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ERROR: Blockers require manual intervention" >> $LOG_FILE
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_reviewer: ❌ Review blockers require manual intervention"
+```
