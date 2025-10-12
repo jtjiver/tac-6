@@ -1,5 +1,6 @@
 import './style.css'
 import { api } from './api/client'
+import confetti from 'canvas-confetti'
 
 // Global state
 
@@ -77,6 +78,30 @@ function initializeUserProfile() {
   });
 }
 
+// Trigger celebratory animation on query button click
+function triggerQueryAnimation() {
+  // Get the query button position for the animation origin
+  const queryButton = document.getElementById('query-button') as HTMLButtonElement;
+  const rect = queryButton.getBoundingClientRect();
+
+  // Calculate the origin point relative to viewport (0-1 scale)
+  const originX = (rect.left + rect.width / 2) / window.innerWidth;
+  const originY = (rect.top + rect.height / 2) / window.innerHeight;
+
+  // Fire confetti with app theme colors
+  confetti({
+    particleCount: 75,
+    spread: 70,
+    origin: { x: originX, y: originY },
+    colors: ['#667eea', '#764ba2', '#9f7aea', '#b794f6', '#e9d5ff'],
+    ticks: 200,
+    gravity: 1,
+    decay: 0.94,
+    startVelocity: 30,
+    scalar: 0.8
+  });
+}
+
 // Query Input Functionality
 function initializeQueryInput() {
   const queryInput = document.getElementById('query-input') as HTMLTextAreaElement;
@@ -126,17 +151,20 @@ function initializeQueryInput() {
   queryButton.addEventListener('click', () => {
     const query = queryInput.value.trim();
     if (!query || isQueryInProgress) return;
-    
+
+    // Trigger animation immediately for instant visual feedback
+    triggerQueryAnimation();
+
     // Debounce rapid clicks
     if (debounceTimer) {
       clearTimeout(debounceTimer);
     }
-    
+
     // Immediately disable UI
     queryButton.disabled = true;
     queryInput.disabled = true;
     queryButton.innerHTML = '<span class="loading"></span>';
-    
+
     debounceTimer = setTimeout(() => {
       executeQuery();
     }, DEBOUNCE_DELAY) as unknown as number;

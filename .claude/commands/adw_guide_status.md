@@ -1,10 +1,64 @@
 # ADW Guide: Status Check
 
-Check the status of current or past ADW interactive workflows.
+**Purpose:** Inspect workflow state and progress across all intelligent ADW guide phases.
+
+This is a read-only diagnostic command that displays the current state of ADW workflows without making any changes. Use this between any workflow phases to check progress, identify next steps, and verify workflow integrity.
+
+## Overview
+
+The ADW Status command provides visibility into the intelligent workflow system by reading state files and displaying progress indicators. Unlike the other guide commands that orchestrate Claude as a sub-agent, this command simply reads and presents existing state information.
+
+**Part of the Intelligent Workflow System:**
+- `/adw_guide_plan` → Creates plan and initializes state
+- `/adw_guide_build` → Implements plan using Claude sub-agent
+- `/adw_guide_test` → Validates implementation with Claude sub-agent
+- `/adw_guide_review` → Reviews against spec with Claude sub-agent
+- `/adw_guide_pr` → Creates pull request
+- `/adw_guide_status` → **[YOU ARE HERE]** Checks progress at any point
 
 ## Variables
 
 - `$1` = ADW ID (optional - will show all if not provided)
+
+## State Management Integration
+
+This command reads from the ADW state management system:
+
+**Core State File:** `agents/{adw_id}/adw_state.json`
+- Managed by: `adws/adw_modules/state.py` (ADWState class)
+- Contains: ADW ID, issue number, branch name, plan file, issue class
+- Additional fields: current_phase, mode, pr_created, pr_url
+
+**State Structure:**
+```json
+{
+  "adw_id": "abc12345",
+  "issue_number": "1",
+  "issue_class": "/feature",
+  "branch_name": "feature-issue-1-adw-abc12345-description",
+  "plan_file": "specs/issue-1-adw-abc12345-description.md",
+  "current_phase": "build_complete",
+  "mode": "interactive",
+  "pr_created": false
+}
+```
+
+## When to Use This Command
+
+Use `/adw_guide_status` at any point during your workflow to:
+
+1. **Check Progress:** See which phases are complete and what's next
+2. **Resume After Break:** Identify where you left off in a workflow
+3. **Debug Workflow:** Verify state integrity if something seems wrong
+4. **Find ADW ID:** List all active workflows to find your ADW ID
+5. **Between Phases:** Confirm one phase completed before starting the next
+6. **Multiple Workflows:** Track several concurrent workflows
+
+**Examples:**
+- After `/adw_guide_plan` completes → Run status to verify state and get ADW ID
+- Before `/adw_guide_build` → Confirm planning phase is complete
+- After long break → Check which workflows need attention
+- Error troubleshooting → Verify current_phase matches expected state
 
 ## Instructions
 
@@ -85,17 +139,18 @@ Based on current phase, suggest what to do next:
 
 ### Step 5: Show Helpful Commands
 
-Display available commands:
+Display available commands with intelligent workflow context:
 
 "**Available ADW Guide Commands:**
-- `/adw_guide_plan` - Start new workflow
-- `/adw_guide_build {adw_id}` - Implementation phase
-- `/adw_guide_test {adw_id}` - Testing phase
-- `/adw_guide_review {adw_id}` - Review phase
-- `/adw_guide_pr {adw_id}` - Create pull request
-- `/adw_guide_status [adw_id]` - Check status (this command)
+- `/adw_guide_plan` - Start new workflow (initializes state, creates plan)
+- `/adw_guide_build {adw_id}` - Implementation phase (orchestrates Claude sub-agent)
+- `/adw_guide_test {adw_id}` - Testing phase (orchestrates Claude sub-agent)
+- `/adw_guide_review {adw_id}` - Review phase (orchestrates Claude sub-agent)
+- `/adw_guide_pr {adw_id}` - Create pull request (final step)
+- `/adw_guide_status [adw_id]` - Check status (this command - read-only)
 
-**Resume any phase:** Just run the command for that phase with your ADW ID"
+**Resume any phase:** Just run the command for that phase with your ADW ID.
+All phases are idempotent and can be re-run safely."
 
 ### Step 6: Show Cost Summary
 
@@ -157,11 +212,16 @@ Total saved: ~$4-18 ✨
 
 ## What NOT to Do
 
-- **DO NOT** call subprocess.run()
-- **DO NOT** make programmatic API calls
-- **DO** read and display state files
-- **DO** provide helpful guidance
-- **DO** show clear next steps
+This is a **read-only diagnostic command** - it should only inspect and display state:
+
+- **DO NOT** call subprocess.run() or execute any code
+- **DO NOT** make programmatic API calls or invoke sub-agents
+- **DO NOT** modify any state files or workflow data
+- **DO NOT** trigger any workflow phases
+- **DO** read and display state files from `agents/{adw_id}/adw_state.json`
+- **DO** provide helpful guidance about next steps
+- **DO** show clear workflow progress indicators
+- **DO** reference the state management system (`adws/adw_modules/state.py`)
 
 ## Error Handling
 
