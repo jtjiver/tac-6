@@ -69,7 +69,7 @@ sequenceDiagram
     deactivate S1
     T-->>M: Issue data
     deactivate T
-    M->>U: 📋 Issue #123: {title}<br/>{body summary}
+    M->>U: Issue #123: {title}<br/>{body summary}
 
     Note over M,Git: Phase 3: Issue Classification (Sub-Agent 2)
     M->>T: Task: Classify GitHub issue type
@@ -82,11 +82,11 @@ sequenceDiagram
     deactivate S2
     T-->>M: /feature
     deactivate T
-    M->>U: 🔍 Issue Classification: /feature
+    M->>U: Issue Classification: /feature
 
     Note over M,Git: Phase 4: Generate ADW ID
     M->>M: python3 -c "import uuid; print(str(uuid.uuid4())[:8])"
-    M->>U: 🆔 ADW ID: abc12345
+    M->>U: ADW ID: abc12345
 
     Note over M,Git: Phase 5: Branch Name Generation (Sub-Agent 3)
     M->>T: Task: Generate semantic branch name
@@ -106,24 +106,24 @@ sequenceDiagram
     Git-->>M: Branch created
     M->>M: mkdir -p agents/abc12345/logs
     M->>M: Create LOG_FILE with timestamp
-    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: ✅ Starting planning phase"
+    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: Starting planning phase"
     GH-->>M: Comment posted
-    M->>U: ✅ Branch created: feature-issue-123-adw-abc12345-add-export
+    M->>U: Branch created: feature-issue-123-adw-abc12345-add-export
 
     Note over M,Git: Phase 7: State File Creation
     M->>M: mkdir -p agents/abc12345
     M->>M: Create adw_state.json:<br/>{<br/>  "adw_id": "abc12345",<br/>  "issue_number": "123",<br/>  "issue_class": "/feature",<br/>  "branch_name": "feature-issue-123...",<br/>  "mode": "interactive_intelligent"<br/>}
-    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: ✅ Working on branch"
+    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: Working on branch"
     GH-->>M: Comment posted
-    M->>U: ✅ State file created: agents/abc12345/adw_state.json
+    M->>U: State file created: agents/abc12345/adw_state.json
 
     Note over M,Git: Phase 8: Implementation Plan Creation (Sub-Agent 4)
-    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: ✅ Issue classified as: /feature"
+    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: Issue classified as /feature"
     M->>T: Task: Create detailed implementation plan
     activate T
     T->>S4: Spawn sub-agent with full issue context
     activate S4
-    Note over S4: This sub-agent executes the<br/>/feature slash command
+    Note over S4: This sub-agent executes the /feature slash command
     S4->>S4: Read .claude/commands/feature.md
     S4->>S4: Analyze issue requirements
     S4->>S4: Research codebase structure
@@ -134,34 +134,34 @@ sequenceDiagram
     deactivate S4
     T-->>M: specs/issue-123-adw-abc12345-sdlc_planner-add-export.md
     deactivate T
-    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_sdlc_planner: ✅ Implementation plan created"
-    M->>U: ✅ Plan file created
+    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_sdlc_planner: Implementation plan created"
+    M->>U: Plan file created
 
     Note over M,Git: Phase 9: Plan File Verification
     M->>M: Verify plan file exists
     M->>M: jq update adw_state.json with plan_file path
-    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: ✅ Plan file created: specs/..."
-    M->>U: ✅ Plan file verified
+    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: Plan file created: specs/..."
+    M->>U: Plan file verified
 
     Note over M,Git: Phase 10: Commit Creation (Sub-Agent 5)
     M->>T: Task: Create semantic commit for plan
     activate T
     T->>S5: Spawn sub-agent for commit
     activate S5
-    Note over S5: This sub-agent executes the<br/>/commit slash command
+    Note over S5: This sub-agent executes the /commit slash command
     S5->>S5: Read .claude/commands/commit.md
     S5->>Git: git add .
     S5->>Git: git status, git diff --stat
     S5->>S5: Analyze changes
     S5->>S5: Generate semantic commit message
-    S5->>Git: git commit -m "feat: add export functionality<br/><br/>🤖 Generated with Claude Code<br/>Co-Authored-By: Claude <noreply@anthropic.com>"
+    S5->>Git: git commit -m "feat: add export functionality"
     Git-->>S5: Commit SHA
     S5-->>T: Commit successful
     deactivate S5
     T-->>M: Commit created
     deactivate T
-    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_sdlc_planner: ✅ Plan committed"
-    M->>U: ✅ Plan committed successfully
+    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_sdlc_planner: Plan committed"
+    M->>U: Plan committed successfully
 
     Note over M,Git: Phase 11: Push and PR Creation (Sub-Agent 6)
     M->>Git: git push -u origin feature-issue-123-adw-abc12345-add-export
@@ -170,24 +170,24 @@ sequenceDiagram
     activate T
     T->>S6: Spawn sub-agent for PR
     activate S6
-    Note over S6: This sub-agent executes the<br/>/pull_request slash command
+    Note over S6: This sub-agent executes the /pull_request slash command
     S6->>S6: Read .claude/commands/pull_request.md
     S6->>GH: gh pr list --head feature-issue-123-adw-abc12345-add-export
     GH-->>S6: No existing PR
-    S6->>S6: Generate PR title and body<br/>Include plan overview<br/>Link to issue
-    S6->>GH: gh pr create --title "feat: Add export functionality (#123)" --body "..."
+    S6->>S6: Generate PR title and body, include plan overview, link to issue
+    S6->>GH: gh pr create --title "feat: Add export functionality" --body "..."
     GH-->>S6: PR URL
     S6-->>T: https://github.com/owner/repo/pull/456
     deactivate S6
     T-->>M: PR URL
     deactivate T
-    M->>U: Pull request created: https://github.com/owner/repo/pull/456
+    M->>U: Pull request created
 
     Note over M,Git: Phase 12: Completion
-    M->>M: jq update adw_state.json:<br/>current_phase = "planning_complete"<br/>pr_url = "https://..."
-    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: ✅ Planning phase completed"
-    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: 📋 Final planning state:<br/>```json<br/>{state}<br/>```"
-    M->>U: ✅ Planning phase complete!<br/><br/>**Sub-agents spawned: 6**<br/>**Time: ~2-3 minutes**<br/>**Cost: $0**
+    M->>M: jq update adw_state.json (planning_complete, pr_url)
+    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: Planning phase completed"
+    M->>GH: gh issue comment 123 --body "[ADW-BOT] abc12345_ops: Final planning state"
+    M->>U: Planning phase complete! Sub-agents: 6, Time: 2-3 min, Cost: $0
 
     deactivate M
 ```
