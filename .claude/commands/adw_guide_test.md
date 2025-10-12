@@ -4,7 +4,7 @@ Interactive guide with intelligent sub-agent delegation for maximum automation a
 
 ## Architecture Overview
 
-This intelligent guide uses Claude Code's **Task tool** to spawn sub-agents within the same session, automating the entire testing workflow while staying at zero cost (covered by Claude Pro).
+This intelligent guide uses Claude Code's **SlashCommand tool** for critical testing operations that need artifact preservation, automating the entire testing workflow while staying at zero cost (covered by Claude Pro).
 
 ### Intelligent Architecture with Sub-Agents
 
@@ -70,9 +70,33 @@ Task tool spawns: "Run E2E test {test_file}"
 
 **IMPORTANT:** This guide uses intelligent sub-agent delegation to automate the entire testing phase. Just provide an ADW ID and the guide orchestrates everything automatically.
 
+**CRITICAL EXECUTION RULES:**
+1. **Never stop until all 9 steps are complete** - Check your TodoWrite list after EVERY step
+2. **Mark each step complete immediately** after finishing it using TodoWrite
+3. **Automatically proceed to the next pending step** without waiting for user input
+4. **Only ask the user questions** at Step 1 (ADW ID) - everything else runs automatically
+5. **If a slash command completes** (e.g., /test, /resolve_failed_test, /test_e2e), immediately continue with the next step
+6. **Display final summary only** when Step 9 is marked "completed" in your TodoWrite list
+
+**Why this matters:** The automated system (`adws/adw_test.py`) runs all steps sequentially without pausing. This interactive guide must match that behavior to provide the same experience.
+
 ### Step 1: Load State and Initialize (Automated with Sub-Agent)
 
 Ask the user: "What is the ADW ID you want to test?" (or auto-detect from argument)
+
+**Initialize TodoWrite tracking:**
+Create todo list with all 9 steps:
+1. Load State and Initialize
+2. Run Backend Tests
+3. Handle Backend Test Failures
+4. Run Frontend Type Checks
+5. Run Frontend Build
+6. Run E2E Tests
+7. Handle E2E Test Failures
+8. Update State and Commit
+9. Post Comprehensive Test Summary
+
+Mark Step 1 as "in_progress" immediately.
 
 Once provided, spawn a sub-agent to load state:
 
@@ -180,6 +204,8 @@ Prompt: |
 
 Store the test results.
 
+**IMPORTANT:** Mark Step 2 as completed in TodoWrite and immediately proceed to Step 3. DO NOT wait for user input.
+
 ### Step 3: Handle Backend Test Failures (Automated with Sub-Agent)
 
 **What This Step Does:**
@@ -189,31 +215,22 @@ Store the test results.
 
 If failed_count > 0, iterate through each failed test:
 
-```markdown
-# Use Task tool to delegate test resolution
-Task: Resolve failed backend test
-Subagent: general-purpose
-Prompt: |
-  Fix this failing test using the /resolve_failed_test command.
-
-  Test Details: {test_json}
-
-  Execute: /resolve_failed_test '{test_json}'
-
-  This will:
-  1. Analyze the test failure details
-  2. Review recent changes that might have caused the failure
-  3. Make targeted fixes to resolve the issue
-  4. Re-run the specific test to verify the fix
-  5. Return success/failure status
-
-  IMPORTANT: Only fix this specific test. Do not modify other tests.
-
-  File Reference:
-  - Mimics: adws/adw_test.py:resolve_failed_tests() line 308-377
-  - Calls: adws/adw_modules/agent.py:execute_template("/resolve_failed_test")
-  - Executes: .claude/commands/resolve_failed_test.md
+```bash
+# Use SlashCommand tool to create agent artifacts
+/resolve_failed_test '{test_json}'
 ```
+
+This will automatically:
+1. Create: `agents/{adw_id}/test_resolver/prompts/resolve_failed_test.txt`
+2. Create: `agents/{adw_id}/test_resolver/raw_output.jsonl`
+3. Create: `agents/{adw_id}/test_resolver/raw_output.json`
+4. Analyze the test failure details
+5. Review recent changes that might have caused the failure
+6. Make targeted fixes to resolve the issue
+7. Re-run the specific test to verify the fix
+8. Return success/failure status
+
+**IMPORTANT:** Only fix this specific test. Do not modify other tests.
 
 **File Reference:**
 - Automated: `adws/adw_test.py:resolve_failed_tests()` line 308-377
@@ -237,6 +254,8 @@ fi
 **Retry Logic:**
 - If tests resolved, go back to Step 2 (max 4 total attempts)
 - If no tests resolved or max attempts reached, continue to next step
+
+**IMPORTANT:** Mark Step 3 as completed in TodoWrite and immediately proceed to Step 4. DO NOT wait for user input.
 
 ### Step 4: Run Frontend Type Checks (Automated with Sub-Agent)
 
@@ -283,6 +302,8 @@ else
 fi
 ```
 
+**IMPORTANT:** Mark Step 4 as completed in TodoWrite and immediately proceed to Step 5. DO NOT wait for user input.
+
 ### Step 5: Run Frontend Build (Automated with Sub-Agent)
 
 **What This Step Does:**
@@ -327,6 +348,8 @@ else
 fi
 ```
 
+**IMPORTANT:** Mark Step 5 as completed in TodoWrite and immediately proceed to Step 6. DO NOT wait for user input.
+
 ### Step 6: Run E2E Tests (Automated with Sub-Agent)
 
 **What This Step Does:**
@@ -353,43 +376,32 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running E2E tests" >> $LOG_FILE
 
 Find and run each E2E test file sequentially:
 
-```markdown
-# Use Task tool to delegate E2E testing
-Task: Run E2E test
-Subagent: general-purpose
-Prompt: |
-  Run this E2E test using Playwright browser automation.
-
-  Test File: {test_file}
-  ADW ID: {adw_id}
-  Agent Name: e2e_test_runner_0_{idx}
-
-  Execute: /test_e2e {adw_id} e2e_test_runner_0_{idx} {test_file}
-
-  This will:
-  1. Read the E2E test file
-  2. Start Playwright browser in headed mode
-  3. Execute the test steps
-  4. Capture screenshots at specified points
-  5. Save screenshots to: agents/{adw_id}/e2e_test_runner_0_{idx}/img/
-  6. Return results in JSON format:
-  ```json
-  {
-    "test_name": "test_name",
-    "status": "passed|failed",
-    "test_path": "{test_file}",
-    "screenshots": ["path1.png", "path2.png"],
-    "error": null
-  }
-  ```
-
-  IMPORTANT: Stop on first E2E test failure.
-
-  File Reference:
-  - Mimics: adws/adw_test.py:execute_single_e2e_test() line 524-610
-  - Calls: adws/adw_modules/agent.py:execute_template("/test_e2e")
-  - Executes: .claude/commands/test_e2e.md
+```bash
+# Use SlashCommand tool to create agent artifacts
+/test_e2e {adw_id} e2e_test_runner_0_{idx} {test_file}
 ```
+
+This will automatically:
+1. Create: `agents/{adw_id}/e2e_test_runner_0_{idx}/prompts/test_e2e.txt`
+2. Create: `agents/{adw_id}/e2e_test_runner_0_{idx}/raw_output.jsonl`
+3. Create: `agents/{adw_id}/e2e_test_runner_0_{idx}/raw_output.json`
+4. Read the E2E test file
+5. Start Playwright browser in headed mode
+6. Execute the test steps
+7. Capture screenshots at specified points
+8. Save screenshots to: `agents/{adw_id}/e2e_test_runner_0_{idx}/img/`
+9. Return results in JSON format:
+```json
+{
+  "test_name": "test_name",
+  "status": "passed|failed",
+  "test_path": "{test_file}",
+  "screenshots": ["path1.png", "path2.png"],
+  "error": null
+}
+```
+
+**IMPORTANT:** Stop on first E2E test failure.
 
 **File Reference:**
 - Automated: `adws/adw_test.py:run_e2e_tests()` line 489-521
@@ -398,6 +410,8 @@ Prompt: |
 - Executes: `.claude/commands/test_e2e.md`
 
 Store E2E test results.
+
+**IMPORTANT:** Mark Step 6 as completed in TodoWrite and immediately proceed to Step 7. DO NOT wait for user input.
 
 ### Step 7: Handle E2E Test Failures (Automated with Sub-Agent)
 
@@ -408,31 +422,22 @@ Store E2E test results.
 
 If E2E tests failed, iterate through each failed test:
 
-```markdown
-# Use Task tool to delegate E2E test resolution
-Task: Resolve failed E2E test
-Subagent: general-purpose
-Prompt: |
-  Fix this failing E2E test.
-
-  Test Details: {e2e_test_json}
-
-  Execute: /resolve_failed_e2e_test '{e2e_test_json}'
-
-  This will:
-  1. Analyze the E2E test failure details
-  2. Review the test steps and screenshots
-  3. Identify what went wrong in the UI/functionality
-  4. Make targeted fixes to resolve the issue
-  5. Return success/failure status
-
-  IMPORTANT: Only fix issues related to this specific E2E test.
-
-  File Reference:
-  - Mimics: adws/adw_test.py:resolve_failed_e2e_tests() line 662-731
-  - Calls: adws/adw_modules/agent.py:execute_template("/resolve_failed_e2e_test")
-  - Executes: .claude/commands/resolve_failed_e2e_test.md
+```bash
+# Use SlashCommand tool to create agent artifacts
+/resolve_failed_e2e_test '{e2e_test_json}'
 ```
+
+This will automatically:
+1. Create: `agents/{adw_id}/e2e_test_resolver/prompts/resolve_failed_e2e_test.txt`
+2. Create: `agents/{adw_id}/e2e_test_resolver/raw_output.jsonl`
+3. Create: `agents/{adw_id}/e2e_test_resolver/raw_output.json`
+4. Analyze the E2E test failure details
+5. Review the test steps and screenshots
+6. Identify what went wrong in the UI/functionality
+7. Make targeted fixes to resolve the issue
+8. Return success/failure status
+
+**IMPORTANT:** Only fix issues related to this specific E2E test.
 
 **File Reference:**
 - Automated: `adws/adw_test.py:resolve_failed_e2e_tests()` line 662-731
@@ -457,6 +462,8 @@ fi
 - If E2E tests resolved, go back to Step 6 (max 2 total attempts)
 - If no tests resolved or max attempts reached, continue to next step
 
+**IMPORTANT:** Mark Step 7 as completed in TodoWrite and immediately proceed to Step 8. DO NOT wait for user input.
+
 ### Step 8: Update State and Commit (Automated with Sub-Agent)
 
 **What This Step Does:**
@@ -471,34 +478,22 @@ gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_test_runner: ✅ Comm
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Committing test results" >> $LOG_FILE
 ```
 
-Delegate commit creation to sub-agent:
+Delegate commit creation using SlashCommand:
 
-```markdown
-# Use Task tool to delegate commit creation
-Task: Create commit for test results
-Subagent: general-purpose
-Prompt: |
-  Create a commit for the test results.
-
-  Agent: test_runner
-  Type: {type} (from issue classification)
-  Issue: {issue_json}
-  ADW ID: {adw_id}
-
-  Execute: /commit test_runner {type} '{issue_json}'
-
-  This will:
-  1. Stage all changes (git add .)
-  2. Analyze the test-related changes
-  3. Generate semantic commit message following project conventions
-  4. Create commit with proper attribution
-  5. Return the commit SHA
-
-  File Reference:
-  - Mimics: adws/adw_modules/workflow_ops.py:create_commit() line 238-272
-  - Calls: adws/adw_modules/agent.py:execute_template("/commit")
-  - Executes: .claude/commands/commit.md
+```bash
+# Use SlashCommand tool to create agent artifacts
+/commit test_runner {type} '{issue_json}'
 ```
+
+This will automatically:
+1. Create: `agents/{adw_id}/test_runner/prompts/commit.txt`
+2. Create: `agents/{adw_id}/test_runner/raw_output.jsonl`
+3. Create: `agents/{adw_id}/test_runner/raw_output.json`
+4. Stage all changes (git add .)
+5. Analyze the test-related changes
+6. Generate semantic commit message following project conventions
+7. Create commit with proper attribution
+8. Return the commit SHA
 
 **File Reference:**
 - Automated: `adws/adw_test.py:create_commit()` line 1033
@@ -532,6 +527,8 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Testing phase completed" >> $LOG_FILE
 **File Reference:**
 - Automated: `adws/adw_modules/git_ops.py:finalize_git_operations()` line 80-139
 
+**IMPORTANT:** Mark Step 8 as completed in TodoWrite and immediately proceed to Step 9. DO NOT wait for user input.
+
 ### Step 9: Post Comprehensive Test Summary (Automated)
 
 **What This Step Does:**
@@ -559,6 +556,8 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Posted test summary to issue" >> $LOG_FIL
 
 **File Reference:**
 - Automated: `adws/adw_test.py:log_test_results()` line 149-217
+
+**FINAL STEP:** Mark Step 9 as completed in TodoWrite. Verify ALL 9 steps show "completed" status. You are now done with the testing phase.
 
 Display comprehensive summary to user:
 
