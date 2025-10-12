@@ -58,9 +58,32 @@ Task tool spawns: "Create semantic commit for implementation"
 
 **IMPORTANT:** This guide uses intelligent sub-agent delegation to automate the entire implementation phase. Just provide an ADW ID and the guide orchestrates everything automatically.
 
+**CRITICAL EXECUTION RULES:**
+1. **Never stop until all 8 steps are complete** - Check your TodoWrite list after EVERY step
+2. **Mark each step complete immediately** after finishing it using TodoWrite
+3. **Automatically proceed to the next pending step** without waiting for user input
+4. **Only ask the user questions** at Step 1 (ADW ID) - everything else runs automatically
+5. **If a slash command completes** (e.g., /implement, /commit), immediately continue with the next step
+6. **Display final summary only** when Step 8 is marked "completed" in your TodoWrite list
+
+**Why this matters:** The automated system (`adws/adw_build.py`) runs all steps sequentially without pausing. This interactive guide must match that behavior to provide the same experience.
+
 ### Step 1: Load State and Initialize (Automated)
 
 Ask the user: "What is the ADW ID you want to continue working on?"
+
+**Initialize TodoWrite tracking:**
+Create todo list with all 8 steps:
+1. Load State and Initialize
+2. Verify Branch
+3. Locate Plan File
+4. Implement Solution
+5. Review Changes
+6. Create Commit
+7. Update State
+8. Complete Build Phase
+
+Mark Step 1 as "in_progress" immediately.
 
 Once provided, spawn a sub-agent to load and verify the state:
 
@@ -165,12 +188,11 @@ gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Found plan: 
 
 Display: "✅ Plan file located: `{plan_file}`"
 
-### Step 4: Implement Solution (Automated with Sub-Agent)
+### Step 4: Implement Solution (Automated with SlashCommand)
 
 **What This Step Does:**
-- Spawns sub-agent to implement all changes from the plan
+- Uses SlashCommand to implement all changes from the plan (creates agent artifacts)
 - Mimics `adws/adw_modules/workflow_ops.py:implement_solution()`
-- Executes `/implement` slash command
 
 Post pre-implementation status:
 ```bash
@@ -178,48 +200,34 @@ gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_sdlc_implementor: ✅
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running /implement command" >> $LOG_FILE
 ```
 
-Delegate implementation to specialized sub-agent:
+Execute the implement slash command:
 
-```markdown
-# Use Task tool to delegate implementation
-Task: Implement solution from plan
-Subagent: general-purpose
-Prompt: |
-  Implement the solution described in the plan file.
-
-  Plan File: {plan_file}
-  Issue: #{issue_number}
-  ADW ID: {adw_id}
-
-  Execute the implementation command:
-  /implement {plan_file}
-
-  This will:
-  1. Read and analyze the implementation plan thoroughly
-  2. Research the codebase to understand existing patterns
-  3. Implement all required changes following the plan:
-     - Create new files as specified
-     - Modify existing files as detailed
-     - Follow project conventions and patterns
-  4. Ensure all acceptance criteria are addressed
-  5. Report what was implemented
-
-  IMPORTANT: Follow the plan precisely and implement all requirements.
-
-  File Reference:
-  - Mimics: adws/adw_modules/workflow_ops.py:implement_solution() line 328-365
-  - Calls: adws/adw_modules/agent.py:execute_template("/implement")
-  - Executes: .claude/commands/implement.md
-  - Model: opus (complex implementation requires advanced reasoning)
+```bash
+# Use SlashCommand tool to create agent artifacts
+/implement {plan_file}
 ```
+
+This will automatically:
+1. Create: `agents/{adw_id}/sdlc_implementor/prompts/implement.txt`
+2. Create: `agents/{adw_id}/sdlc_implementor/raw_output.jsonl`
+3. Create: `agents/{adw_id}/sdlc_implementor/raw_output.json`
+4. Read and analyze the implementation plan thoroughly
+5. Research the codebase to understand existing patterns
+6. Implement all required changes following the plan:
+   - Create new files as specified
+   - Modify existing files as detailed
+   - Follow project conventions and patterns
+7. Ensure all acceptance criteria are addressed
+8. Report what was implemented
 
 **File Reference:**
 - Automated: `adws/adw_modules/workflow_ops.py:implement_solution()` line 328-365
 - Calls: `adws/adw_modules/agent.py:execute_template("/implement")` line 262-299
 - Executes: `.claude/commands/implement.md`
 - Model: `opus` for complex implementation
+- Agent folder: `agents/{adw_id}/sdlc_implementor/`
 
-The sub-agent will implement the solution and report completion.
+The slash command will implement the solution and report completion.
 
 Post implementation status:
 ```bash
@@ -228,6 +236,8 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Implementation complete" >> $LOG_FILE
 ```
 
 Display: "✅ Implementation complete"
+
+**IMPORTANT:** Mark Step 4 as completed in TodoWrite and immediately proceed to Step 5. DO NOT wait for user input.
 
 ### Step 5: Review Changes (Automated)
 
@@ -249,10 +259,10 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Changes reviewed" >> $LOG_FILE
 
 Display summary of changes to user.
 
-### Step 6: Create Commit (Automated with Sub-Agent)
+### Step 6: Create Commit (Automated with SlashCommand)
 
 **What This Step Does:**
-- Spawns sub-agent to create semantic commit
+- Uses SlashCommand to create semantic commit (creates agent artifacts)
 - Mimics `adws/adw_modules/workflow_ops.py:create_commit()`
 
 Post pre-commit status:
@@ -260,43 +270,30 @@ Post pre-commit status:
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Creating commit" >> $LOG_FILE
 ```
 
-Delegate commit creation to sub-agent:
+Execute the commit slash command:
 
-```markdown
-# Use Task tool to delegate commit creation
-Task: Create semantic commit for implementation
-Subagent: general-purpose
-Prompt: |
-  Create a semantic commit for the implementation changes.
-
-  Agent: sdlc_implementor
-  Type: {type} (from issue classification)
-  Issue: {issue_json}
-
-  Execute the commit command:
-  /commit sdlc_implementor {type} '{issue_json}'
-
-  This will:
-  1. Stage all changes (git add .)
-  2. Analyze the implementation changes
-  3. Generate semantic commit message following project conventions
-  4. Create commit with proper attribution
-  5. Return the commit SHA
-
-  IMPORTANT: Ensure the commit is created successfully.
-
-  File Reference:
-  - Mimics: adws/adw_modules/workflow_ops.py:create_commit() line 238-272
-  - Calls: adws/adw_modules/agent.py:execute_template("/commit")
-  - Executes: .claude/commands/commit.md
-  - Model: sonnet (fast commit generation)
+```bash
+# Use SlashCommand tool to create agent artifacts
+/commit sdlc_implementor {type} '{issue_json}'
 ```
+
+Where `{type}` is `feature`, `bug`, or `chore` (without the slash).
+
+This will automatically:
+1. Stage all changes (git add .)
+2. Create: `agents/{adw_id}/sdlc_implementor/prompts/commit.txt` (appends if exists)
+3. Analyze the implementation changes
+4. Generate semantic commit message following project conventions
+5. Create commit with proper attribution
+6. Return the commit SHA
 
 **File Reference:**
 - Automated: `adws/adw_modules/workflow_ops.py:create_commit()` line 238-272
 - Calls: `adws/adw_modules/agent.py:execute_template("/commit")` line 262-299
 - Executes: `.claude/commands/commit.md`
 - Git ops: `adws/adw_modules/git_ops.py:commit_changes()` line 37-56
+- Model: `sonnet` (fast commit generation)
+- Agent folder: `agents/{adw_id}/sdlc_implementor/` (reuses implementor folder)
 
 Post commit completion:
 ```bash
@@ -305,6 +302,8 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Changes committed" >> $LOG_FILE
 ```
 
 Display: "✅ Changes committed successfully"
+
+**IMPORTANT:** Mark Step 6 as completed in TodoWrite and immediately proceed to Step 7. DO NOT wait for user input.
 
 ### Step 7: Update State (Automated)
 
@@ -349,6 +348,8 @@ $FINAL_STATE
 
 **File Reference:**
 - Automated: `adws/adw_build.py` line 312-330
+
+**FINAL STEP:** Mark Step 8 as completed in TodoWrite. Verify ALL 8 steps show "completed" status. You are now done with the build phase.
 
 Display comprehensive summary to user:
 

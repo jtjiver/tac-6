@@ -106,42 +106,33 @@ Prompt: |
 
 Store the issue JSON for subsequent steps.
 
-### Step 2: Classify the Issue (Automated with Sub-Agent)
+### Step 2: Classify the Issue (Automated with SlashCommand)
 
 **What This Step Does:**
-- Spawns a sub-agent to classify the issue
+- Uses SlashCommand to classify the issue (creates agent artifacts)
 - Mimics `adws/adw_modules/workflow_ops.py:classify_issue()`
 - Returns `/feature`, `/bug`, or `/chore`
 
-Automatically delegate to classification sub-agent:
+Execute the classification slash command:
 
-```markdown
-# Use Task tool to delegate classification
-Task: Classify GitHub issue type
-Subagent: general-purpose
-Prompt: |
-  Classify this GitHub issue and determine the appropriate workflow type.
-
-  Issue JSON: {issue_json}
-
-  Analyze and determine if this is:
-  - **Feature**: New functionality or enhancement → return "/feature"
-  - **Bug**: Something broken that needs fixing → return "/bug"
-  - **Chore**: Maintenance, refactoring, documentation, or cleanup → return "/chore"
-
-  Read the classification guide: .claude/commands/classify_issue.md
-
-  Return ONLY the classification: /feature, /bug, or /chore
-
-  File Reference: This mimics adws/adw_modules/workflow_ops.py:classify_issue() line 98-146
+```bash
+# Use SlashCommand tool to create agent artifacts
+/classify_issue '{issue_json}'
 ```
+
+This will automatically:
+1. Create: `agents/{adw_id}/issue_classifier/prompts/classify_issue.txt`
+2. Create: `agents/{adw_id}/issue_classifier/raw_output.jsonl`
+3. Create: `agents/{adw_id}/issue_classifier/raw_output.json`
+4. Return the classification: `/feature`, `/bug`, or `/chore`
 
 **File Reference:**
 - Automated: `adws/adw_modules/workflow_ops.py:classify_issue()` line 98-146
 - Calls: `adws/adw_modules/agent.py:execute_template("/classify_issue")` line 262-299
 - Executes: `.claude/commands/classify_issue.md`
+- Agent folder: `agents/{adw_id}/issue_classifier/`
 
-The sub-agent will analyze and return the classification. Store it for next steps.
+Store the classification for next steps.
 
 Display to user:
 ```
@@ -166,45 +157,31 @@ ADW_ID=$(python3 -c "import uuid; print(str(uuid.uuid4())[:8])")
 
 Display: "🆔 ADW ID: `{adw_id}`"
 
-### Step 4: Generate Branch Name (Automated with Sub-Agent)
+### Step 4: Generate Branch Name (Automated with SlashCommand)
 
 **What This Step Does:**
-- Spawns a sub-agent to generate semantic branch name
+- Uses SlashCommand to generate semantic branch name (creates agent artifacts)
 - Mimics `adws/adw_modules/workflow_ops.py:generate_branch_name()`
 
-Delegate branch name generation to sub-agent:
+Execute the branch name generation slash command:
 
-```markdown
-# Use Task tool to delegate branch name generation
-Task: Generate semantic branch name
-Subagent: general-purpose
-Prompt: |
-  Generate a semantic branch name for this issue.
-
-  Issue: #{issue_number} - {issue_title}
-  Classification: {classification} (feature/bug/chore)
-  ADW ID: {adw_id}
-
-  Read the branch naming guide: .claude/commands/generate_branch_name.md
-
-  Format: {type}-issue-{number}-adw-{adw_id}-{slug}
-
-  Where:
-  - {type} = feature, bug, or chore (without slash)
-  - {number} = {issue_number}
-  - {adw_id} = {adw_id}
-  - {slug} = short descriptive slug (3-5 words, kebab-case)
-
-  Return ONLY the branch name, nothing else.
-
-  File Reference: This mimics adws/adw_modules/workflow_ops.py:generate_branch_name() line 205-235
+```bash
+# Use SlashCommand tool to create agent artifacts
+/generate_branch_name {issue_number} '{classification}' '{issue_title}' {adw_id}
 ```
+
+This will automatically:
+1. Create: `agents/{adw_id}/branch_generator/prompts/generate_branch_name.txt`
+2. Create: `agents/{adw_id}/branch_generator/raw_output.jsonl`
+3. Create: `agents/{adw_id}/branch_generator/raw_output.json`
+4. Return the branch name in format: `{type}-issue-{number}-adw-{adw_id}-{slug}`
 
 **File Reference:**
 - Automated: `adws/adw_modules/workflow_ops.py:generate_branch_name()` line 205-235
 - Calls: `adws/adw_modules/agent.py:execute_template("/generate_branch_name")` line 262-299
 - Executes: `.claude/commands/generate_branch_name.md`
 - Model: `sonnet` (line 27 in agent.py)
+- Agent folder: `agents/{adw_id}/branch_generator/`
 
 Store the branch name.
 
@@ -270,10 +247,10 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] State file created" >> $LOG_FILE
 
 Display: "✅ State file created: `agents/{adw_id}/adw_state.json`"
 
-### Step 7: Create Implementation Plan (Automated with Sub-Agent)
+### Step 7: Create Implementation Plan (Automated with SlashCommand)
 
 **What This Step Does:**
-- Spawns a sub-agent to create detailed implementation plan
+- Uses SlashCommand to create detailed implementation plan (creates agent artifacts)
 - Mimics `adws/adw_modules/workflow_ops.py:build_plan()`
 - Executes the appropriate slash command based on classification
 
@@ -284,47 +261,29 @@ gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Issue classi
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running {classification} planning command" >> $LOG_FILE
 ```
 
-Delegate plan creation to specialized sub-agent:
+Execute the planning slash command based on classification:
 
-```markdown
-# Use Task tool to delegate plan creation
-Task: Create detailed implementation plan
-Subagent: general-purpose
-Prompt: |
-  Create a detailed implementation plan for this GitHub issue.
-
-  Issue Number: {issue_number}
-  ADW ID: {adw_id}
-  Classification: {classification}
-  Issue Details: {issue_json}
-
-  Execute the appropriate planning command:
-  {classification} {issue_number} {adw_id} '{issue_json}'
-
-  This will:
-  1. Analyze the issue requirements thoroughly
-  2. Research the codebase structure
-  3. Identify files to modify
-  4. Create step-by-step implementation plan
-  5. Write plan to: specs/issue-{issue_number}-adw-{adw_id}-sdlc_planner-{slug}.md
-  6. Return the full path to the created plan file
-
-  IMPORTANT: Return ONLY the plan file path, nothing else.
-
-  File Reference:
-  - Mimics: adws/adw_modules/workflow_ops.py:build_plan() line 149-175
-  - Calls: adws/adw_modules/agent.py:execute_template() line 262-299
-  - Executes: .claude/commands/{chore,bug,feature}.md
-  - Model: opus (from agent.py:SLASH_COMMAND_MODEL_MAP line 48-51)
+```bash
+# Use SlashCommand tool to create agent artifacts
+# Execute one of: /feature, /bug, or /chore
+{classification} {issue_number} {adw_id} '{issue_json}'
 ```
+
+This will automatically:
+1. Create: `agents/{adw_id}/sdlc_planner/prompts/{feature|bug|chore}.txt`
+2. Create: `agents/{adw_id}/sdlc_planner/raw_output.jsonl`
+3. Create: `agents/{adw_id}/sdlc_planner/raw_output.json`
+4. Create plan file: `specs/issue-{issue_number}-adw-{adw_id}-sdlc_planner-{slug}.md`
+5. Return the plan file path
 
 **File Reference:**
 - Automated: `adws/adw_modules/workflow_ops.py:build_plan()` line 149-175
 - Calls: `adws/adw_modules/agent.py:execute_template()` line 262-299
 - Executes: `.claude/commands/{chore,bug,feature}.md`
-- Model: `opus` for complex planning
+- Model: `opus` for complex planning (from agent.py:SLASH_COMMAND_MODEL_MAP line 48-51)
+- Agent folder: `agents/{adw_id}/sdlc_planner/`
 
-The sub-agent will create the plan and return the file path.
+The slash command will create the plan and return the file path.
 
 Post planning completion:
 
@@ -368,49 +327,36 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Plan file verified: $PLAN_FILE" >> $LOG_F
 
 Display: "✅ Plan file verified: `{plan_file}`"
 
-### Step 9: Create Commit (Automated with Sub-Agent)
+### Step 9: Create Commit (Automated with SlashCommand)
 
 **What This Step Does:**
-- Spawns a sub-agent to create semantic commit
+- Uses SlashCommand to create semantic commit (creates agent artifacts)
 - Mimics `adws/adw_modules/workflow_ops.py:create_commit()`
 
-Delegate commit creation to sub-agent:
+Execute the commit slash command:
 
-```markdown
-# Use Task tool to delegate commit creation
-Task: Create semantic commit for plan
-Subagent: general-purpose
-Prompt: |
-  Create a semantic commit for the implementation plan.
-
-  Agent: sdlc_planner
-  Type: {type} (feature/bug/chore without slash)
-  Issue: {issue_json}
-
-  Execute the commit command:
-  /commit sdlc_planner {type} '{issue_json}'
-
-  This will:
-  1. Stage all changes (git add .)
-  2. Analyze the plan file changes
-  3. Generate semantic commit message following project conventions
-  4. Create commit with proper attribution
-  5. Return the commit SHA
-
-  IMPORTANT: Ensure the commit is created successfully.
-
-  File Reference:
-  - Mimics: adws/adw_modules/workflow_ops.py:create_commit() line 238-272
-  - Calls: adws/adw_modules/agent.py:execute_template("/commit")
-  - Executes: .claude/commands/commit.md
-  - Model: sonnet (from agent.py line 45)
+```bash
+# Use SlashCommand tool to create agent artifacts
+/commit sdlc_planner {type} '{issue_json}'
 ```
+
+Where `{type}` is `feature`, `bug`, or `chore` (without the slash).
+
+This will automatically:
+1. Stage all changes (git add .)
+2. Create: `agents/{adw_id}/sdlc_planner/prompts/commit.txt` (if not exists, appends to existing)
+3. Analyze the plan file changes
+4. Generate semantic commit message following project conventions
+5. Create commit with proper attribution
+6. Return the commit SHA
 
 **File Reference:**
 - Automated: `adws/adw_modules/workflow_ops.py:create_commit()` line 238-272
 - Calls: `adws/adw_modules/agent.py:execute_template("/commit")` line 262-299
 - Executes: `.claude/commands/commit.md`
 - Git ops: `adws/adw_modules/git_ops.py:commit_changes()` line 37-56
+- Model: `sonnet` (from agent.py line 45)
+- Agent folder: `agents/{adw_id}/sdlc_planner/` (reuses planner folder)
 
 Post commit completion:
 
@@ -421,71 +367,50 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Commit created" >> $LOG_FILE
 
 Display: "✅ Plan committed successfully"
 
-### Step 10: Push and Create Pull Request (Automated with Sub-Agent)
+### Step 10: Push and Create Pull Request (Automated with SlashCommand)
 
 **What This Step Does:**
-- Pushes branch to remote
-- Spawns sub-agent to create or update PR
+- Pushes branch to remote and creates PR using integrated command
 - Mimics `adws/adw_modules/git_ops.py:finalize_git_operations()`
 
-First, push the branch:
+Execute the commit-push-pr slash command:
 
 ```bash
-# This mimics: adws/adw_modules/git_ops.py:finalize_git_operations() line 110-123
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Pushing branch to remote" >> $LOG_FILE
+# Use SlashCommand tool - this handles commit, push, and PR creation
+/commit-commands:commit-push-pr
+```
+
+This will automatically:
+1. Stage any remaining changes (git add .)
+2. Create a commit if there are uncommitted changes
+3. Push the branch to origin
+4. Create a pull request with:
+   - Title based on branch name and issue
+   - Body with implementation summary
+   - Link to the issue
+5. Return the PR URL
+
+**Alternative** (if you already committed in Step 9):
+```bash
+# Just push and create PR
 git push -u origin {branch_name}
+gh pr create --title "[Issue #{issue_number}] {issue_title}" \
+  --body "Implementation plan: \`{plan_file}\`\n\nCloses #{issue_number}"
 ```
 
 **File Reference:**
 - Automated: `adws/adw_modules/git_ops.py:finalize_git_operations()` line 80-139
-
-Then delegate PR creation to sub-agent:
-
-```markdown
-# Use Task tool to delegate PR creation
-Task: Create or update pull request
-Subagent: general-purpose
-Prompt: |
-  Create or update a pull request for this implementation plan.
-
-  Branch: {branch_name}
-  Issue: {issue_json}
-  Plan File: {plan_file}
-  ADW ID: {adw_id}
-
-  Execute the pull request command:
-  /pull_request {branch_name} '{issue_json}' {plan_file} {adw_id}
-
-  This will:
-  1. Check if PR already exists for this branch
-  2. If exists: Add comment with plan summary
-  3. If new: Create PR with:
-     - Title: Link to issue + summary
-     - Body: Plan overview + testing checklist
-     - Link to issue
-  4. Return the PR URL
-
-  IMPORTANT: Return the full PR URL.
-
-  File Reference:
-  - Mimics: adws/adw_modules/workflow_ops.py:create_pull_request() line 275-325
-  - Calls: adws/adw_modules/agent.py:execute_template("/pull_request")
-  - Executes: .claude/commands/pull_request.md
-  - Model: sonnet (from agent.py line 46)
-```
-
-**File Reference:**
 - Automated: `adws/adw_modules/workflow_ops.py:create_pull_request()` line 275-325
-- Calls: `adws/adw_modules/agent.py:execute_template("/pull_request")` line 262-299
-- Executes: `.claude/commands/pull_request.md`
+- Plugin: `.claude/commands/commit-commands/commit-push-pr.md`
 
 Post PR creation:
 
 ```bash
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Pull request created/updated" >> $LOG_FILE
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ PR created: {pr_url}"
 ```
 
-Store PR URL from sub-agent response.
+Store PR URL from command response.
 
 **IMPORTANT:** Mark Step 10 as completed in TodoWrite and immediately proceed to Step 11. DO NOT wait for user input.
 
