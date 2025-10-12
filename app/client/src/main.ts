@@ -80,26 +80,111 @@ function initializeUserProfile() {
 
 // Trigger celebratory animation on query button click
 function triggerQueryAnimation() {
-  // Get the query button position for the animation origin
+  // Extended color palette (16 vibrant colors)
+  const colors = [
+    '#667eea', '#764ba2', '#9f7aea', '#b794f6', '#e9d5ff',
+    '#3b82f6', '#60a5fa', '#93c5fd',
+    '#ec4899', '#f472b6',
+    '#10b981', '#34d399',
+    '#f59e0b', '#fbbf24',
+    '#ef4444', '#f87171'
+  ];
+
+  // Get button position for origin calculation
   const queryButton = document.getElementById('query-button') as HTMLButtonElement;
   const rect = queryButton.getBoundingClientRect();
-
-  // Calculate the origin point relative to viewport (0-1 scale)
   const originX = (rect.left + rect.width / 2) / window.innerWidth;
   const originY = (rect.top + rect.height / 2) / window.innerHeight;
 
-  // Fire confetti with app theme colors
+  // Stage 1: Center Explosion (immediate)
   confetti({
-    particleCount: 75,
-    spread: 70,
+    particleCount: 100,
+    spread: 180,
     origin: { x: originX, y: originY },
-    colors: ['#667eea', '#764ba2', '#9f7aea', '#b794f6', '#e9d5ff'],
-    ticks: 200,
-    gravity: 1,
+    colors: colors,
+    ticks: 250,
+    gravity: 1.2,
     decay: 0.94,
-    startVelocity: 30,
-    scalar: 0.8
+    startVelocity: 40,
+    scalar: 1.0
   });
+
+  // Stage 2: Side Fireworks (150ms delay)
+  setTimeout(() => {
+    // Left side burst
+    confetti({
+      particleCount: 75,
+      angle: 60,
+      spread: 70,
+      origin: { x: 0.1, y: 0.6 },
+      colors: colors,
+      ticks: 200,
+      gravity: 1.0,
+      decay: 0.92,
+      startVelocity: 35,
+      scalar: 0.9
+    });
+
+    // Right side burst
+    confetti({
+      particleCount: 75,
+      angle: 120,
+      spread: 70,
+      origin: { x: 0.9, y: 0.6 },
+      colors: colors,
+      ticks: 200,
+      gravity: 1.0,
+      decay: 0.92,
+      startVelocity: 35,
+      scalar: 0.9
+    });
+  }, 150);
+
+  // Stage 3: Top-Down Confetti Rain (300ms delay)
+  setTimeout(() => {
+    const positions = [0.2, 0.4, 0.6, 0.8];
+    positions.forEach((x, index) => {
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 270,
+          spread: 45,
+          origin: { x: x, y: 0 },
+          colors: colors,
+          ticks: 300,
+          gravity: 0.8,
+          decay: 0.91,
+          startVelocity: 25,
+          scalar: 0.8
+        });
+      }, index * 50);
+    });
+  }, 300);
+
+  // Stage 4: Corner Sparkles (500ms delay)
+  setTimeout(() => {
+    const corners = [
+      { x: 0.05, y: 0.05, angle: 135 },
+      { x: 0.95, y: 0.05, angle: 225 },
+      { x: 0.05, y: 0.95, angle: 45 },
+      { x: 0.95, y: 0.95, angle: 315 }
+    ];
+
+    corners.forEach((corner) => {
+      confetti({
+        particleCount: 30,
+        angle: corner.angle,
+        spread: 55,
+        origin: { x: corner.x, y: corner.y },
+        colors: colors,
+        ticks: 150,
+        gravity: 1.3,
+        decay: 0.95,
+        startVelocity: 30,
+        scalar: 0.7
+      });
+    });
+  }, 500);
 }
 
 // Query Input Functionality

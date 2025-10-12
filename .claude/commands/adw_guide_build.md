@@ -229,13 +229,44 @@ This will automatically:
 
 The slash command will implement the solution and report completion.
 
-Post implementation status:
+Post implementation status with detailed summary:
 ```bash
-gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_sdlc_implementor: ✅ Solution implemented"
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Implementation complete" >> $LOG_FILE
+
+# Post detailed implementation summary to GitHub issue
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_sdlc_implementor: ✅ Implementation Complete
+
+## Feature Implemented
+{Brief description of what was built}
+
+## Changes Made
+{Bullet points of key changes:
+- Files modified with descriptions
+- New features added
+- Enhancements made
+- Technical details}
+
+## Validation
+{Results from running validation commands:
+- TypeScript check results
+- Build results
+- Test results}
+
+## Files Changed
+\`\`\`
+{Output from git diff --stat}
+\`\`\`
+
+Ready for testing phase."
 ```
 
-Display: "✅ Implementation complete"
+**IMPORTANT:** The implementation summary should include:
+- What feature/fix was implemented
+- Which files were modified and what changed
+- Validation results (TypeScript, build, tests)
+- Git diff stats showing lines changed
+
+Display: "✅ Implementation complete with summary posted to issue"
 
 **IMPORTANT:** Mark Step 4 as completed in TodoWrite and immediately proceed to Step 5. DO NOT wait for user input.
 
