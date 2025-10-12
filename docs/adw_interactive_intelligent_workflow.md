@@ -42,12 +42,12 @@ sequenceDiagram
     participant U as User
     participant M as Main Orchestrator
     participant T as Task Tool
-    participant S1 as Sub-Agent: Fetcher
-    participant S2 as Sub-Agent: Classifier
-    participant S3 as Sub-Agent: Branch Gen
-    participant S4 as Sub-Agent: Planner
-    participant S5 as Sub-Agent: Committer
-    participant S6 as Sub-Agent: PR Creator
+    participant S1 as Sub-Agent Fetcher
+    participant S2 as Sub-Agent Classifier
+    participant S3 as Sub-Agent Branch Gen
+    participant S4 as Sub-Agent Planner
+    participant S5 as Sub-Agent Committer
+    participant S6 as Sub-Agent PR Creator
     participant GH as GitHub
     participant Git as Git
 
