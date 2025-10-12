@@ -84,9 +84,9 @@ sequenceDiagram
     deactivate T
     M->>U: Issue Classification: /feature
 
-    Note over M,Git: Phase 4: Generate ADW ID
-    M->>M: python3 -c 'import uuid; print(str(uuid.uuid4())[:8])'
-    M->>U: ADW ID: abc12345
+    Note over M,Git: Phase 4 - Generate ADW ID
+    M->>M: Generate unique 8-character ID
+    M->>U: Display ADW ID (abc12345)
 
     Note over M,Git: Phase 5: Branch Name Generation (Sub-Agent 3)
     M->>T: Task: Generate semantic branch name
