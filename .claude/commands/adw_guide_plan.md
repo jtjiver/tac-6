@@ -66,6 +66,16 @@ Task tool spawns: "Create implementation plan for {issue}"
 
 **IMPORTANT:** This guide uses intelligent sub-agent delegation to automate the entire planning phase. Just provide an issue number and the guide orchestrates everything automatically.
 
+**CRITICAL EXECUTION RULES:**
+1. **Never stop until all 11 steps are complete** - Check your TodoWrite list after EVERY step
+2. **Mark each step complete immediately** after finishing it using TodoWrite
+3. **Automatically proceed to the next pending step** without waiting for user input
+4. **Only ask the user questions** at Step 1 (issue number) - everything else runs automatically
+5. **If a slash command completes** (e.g., /commit-commands:commit-push-pr), immediately continue with the next step
+6. **Display final summary only** when Step 11 is marked "completed" in your TodoWrite list
+
+**Why this matters:** The automated system (`adws/adw_plan.py`) runs all steps sequentially without pausing. This interactive guide must match that behavior to provide the same experience.
+
 ### Step 1: Gather Information
 
 Ask the user: "What is the GitHub issue number you want to work on?"
@@ -477,6 +487,8 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Pull request created/updated" >> $LOG_FIL
 
 Store PR URL from sub-agent response.
 
+**IMPORTANT:** Mark Step 10 as completed in TodoWrite and immediately proceed to Step 11. DO NOT wait for user input.
+
 ### Step 11: Complete Planning Phase (Automated)
 
 **What This Step Does:**
@@ -557,6 +569,8 @@ agents/{adw_id}/
 
 **Time saved:** ~5-10 minutes of manual slash command execution!
 ```
+
+**FINAL STEP:** Mark Step 11 as completed in TodoWrite. Verify ALL 11 steps show "completed" status. You are now done with the planning phase.
 
 ## Intelligent Architecture Comparison
 
