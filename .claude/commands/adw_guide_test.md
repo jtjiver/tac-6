@@ -66,6 +66,70 @@ Task tool spawns: "Run E2E test {test_file}"
 - ✅ More robust error handling
 - ✅ Better progress tracking
 
+## Prerequisites
+
+### Required: Playwright MCP Server for E2E Tests
+
+E2E tests require the Playwright MCP server to be configured in your Claude Code environment. Without it, E2E tests will be skipped (unit tests and builds will still run).
+
+**Check if Playwright MCP is available:**
+The guide will automatically check for Playwright MCP tools at Step 6. If unavailable, E2E tests are gracefully skipped with a warning.
+
+**To enable Playwright MCP:**
+
+1. **Verify Playwright MCP package is installed:**
+   ```bash
+   npx @playwright/mcp@latest --version
+   ```
+   If not installed, it will be downloaded automatically when the MCP server starts.
+
+2. **Add Playwright to your global Claude config:**
+
+   Edit: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+   Or: `~/.config/Claude/claude_desktop_config.json` (Linux)
+
+   Add this entry to the `mcpServers` section:
+   ```json
+   "playwright": {
+     "command": "npx",
+     "args": [
+       "@playwright/mcp@latest",
+       "--isolated",
+       "--config",
+       "/opt/asw/projects/personal/tac/tac-6/playwright-mcp-config.json"
+     ]
+   }
+   ```
+
+   **Note:** Update the config path to match your project's absolute path.
+
+3. **Restart Claude Code** to load the MCP server connection.
+
+4. **Verify MCP tools are available:**
+   After restart, the following tools should be available:
+   - `mcp__playwright__browser_navigate`
+   - `mcp__playwright__browser_click`
+   - `mcp__playwright__browser_snapshot`
+   - `mcp__playwright__browser_take_screenshot`
+
+**Project-level MCP configuration:**
+This project includes:
+- `.mcp.json` - Defines Playwright MCP server (for reference only)
+- `playwright-mcp-config.json` - Playwright browser settings (headless mode, viewport, etc.)
+
+**Important:** Project-level `.mcp.json` files are NOT automatically loaded by Claude Code. You must add the MCP server to your global config file as shown above.
+
+**Graceful Fallback:**
+If Playwright MCP is not configured, the guide will:
+- ✅ Run all unit tests (backend pytest)
+- ✅ Run TypeScript type checks
+- ✅ Run frontend build
+- ⚠️ Skip E2E tests with clear explanation
+- ✅ Continue to commit and summary phases
+- 📝 Note the skip in GitHub comments and final summary
+
+This ensures the testing phase completes successfully even without E2E capabilities.
+
 ## Instructions
 
 **IMPORTANT:** This guide uses intelligent sub-agent delegation to automate the entire testing phase. Just provide an ADW ID and the guide orchestrates everything automatically.
@@ -355,7 +419,20 @@ fi
 **What This Step Does:**
 - If unit tests passed, run E2E browser tests
 - Mimics `adws/adw_test.py:run_e2e_tests()`
-- Uses Playwright for browser automation
+- Uses Playwright MCP server for browser automation
+
+**IMPORTANT - Check MCP Availability First:**
+Before attempting E2E tests, verify Playwright MCP tools are available. If not available, skip E2E tests gracefully:
+
+```bash
+# Check if mcp__playwright__browser_navigate exists
+# If not available, skip E2E with warning
+if ! <MCP tools available>; then
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] E2E tests skipped - Playwright MCP not available" >> $LOG_FILE
+  gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_e2e_test_runner: ⚠️ E2E tests skipped - Playwright MCP server not connected. See Prerequisites in adw_guide_test.md"
+  # Skip to Step 8
+fi
+```
 
 Skip E2E tests if unit tests failed:
 
