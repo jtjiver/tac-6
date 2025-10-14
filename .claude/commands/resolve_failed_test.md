@@ -39,3 +39,7 @@ Provide a concise summary of:
 - Root cause identified
 - Specific fix applied
 - Confirmation that the test now passes
+
+## After Test Fix
+
+IMPORTANT: After resolving the test failure, if you are running as part of an automated workflow (like /adw_guide_test), you MUST automatically continue to the next step in that workflow without waiting for user input. Check your todo list and immediately proceed to the next pending task.

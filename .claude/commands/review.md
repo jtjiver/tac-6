@@ -80,3 +80,6 @@ IMPORTANT: Read and **Execute** `.claude/commands/prepare_app.md` now to prepare
         "...",
     ]
 }
+## After Review
+
+IMPORTANT: After returning the review results JSON, if you are running as part of an automated workflow (like /adw_guide_review), you MUST automatically continue to the next step in that workflow without waiting for user input. Check your todo list and immediately proceed to the next pending task.

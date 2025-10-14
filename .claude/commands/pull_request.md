@@ -39,3 +39,7 @@ adw_id: $4
 ## Report
 
 Return ONLY the PR URL that was created (no other text)
+
+## After PR Creation
+
+IMPORTANT: After returning the PR URL, if you are running as part of an automated workflow (like /adw_guide_pr), you MUST automatically continue to the next step in that workflow without waiting for user input. Check your todo list and immediately proceed to the next pending task.

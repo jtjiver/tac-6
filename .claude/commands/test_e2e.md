@@ -60,3 +60,6 @@ Each screenshot should be saved with a descriptive name that reflects what is be
   "error": null
 }
 ```
+## After E2E Testing
+
+IMPORTANT: After returning the E2E test results JSON, if you are running as part of an automated workflow (like /adw_guide_test), you MUST automatically continue to the next step in that workflow without waiting for user input. Check your todo list and immediately proceed to the next pending task.

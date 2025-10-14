@@ -113,3 +113,6 @@ TEST_COMMAND_TIMEOUT: 5 minutes
   }
 ]
 ```
+## After Testing
+
+IMPORTANT: After returning the test results JSON, if you are running as part of an automated workflow (like /adw_guide_test), you MUST automatically continue to the next step in that workflow without waiting for user input. Check your todo list and immediately proceed to the next pending task.
