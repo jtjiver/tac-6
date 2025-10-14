@@ -1,13 +1,4 @@
-"""Claude Code agent module for executing prompts programmatically.
-
-⚠️  API CREDIT PROTECTION ENABLED ⚠️
-
-This module has been modified to BLOCK execution that would consume API credits.
-If you want to use API-based automation, you must explicitly enable it.
-
-To enable API usage (COSTS MONEY):
-    Set environment variable: export ADW_ALLOW_API_USAGE=true
-"""
+"""Claude Code agent module for executing prompts programmatically."""
 
 import subprocess
 import sys
@@ -27,13 +18,6 @@ from .data_types import (
 
 # Load environment variables
 load_dotenv()
-
-# ============================================================================
-# API CREDIT PROTECTION
-# ============================================================================
-# By default, BLOCK any execution that might use API credits
-# Set ADW_ALLOW_API_USAGE=true to enable API usage (costs money!)
-API_USAGE_ALLOWED = os.getenv("ADW_ALLOW_API_USAGE", "false").lower() == "true"
 
 # Get Claude Code CLI path from environment
 CLAUDE_PATH = os.getenv("CLAUDE_CODE_PATH", "claude")
@@ -190,61 +174,6 @@ def save_prompt(prompt: str, adw_id: str, agent_name: str = "ops") -> None:
 
 def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
     """Execute Claude Code with the given prompt configuration."""
-
-    # ========================================================================
-    # API CREDIT PROTECTION CHECK
-    # ========================================================================
-    if not API_USAGE_ALLOWED:
-        warning = """
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                                                                           ║
-║                    ⚠️  API CREDIT PROTECTION ACTIVE ⚠️                     ║
-║                                                                           ║
-║  This execution has been BLOCKED to protect your API credits!            ║
-║                                                                           ║
-║  The automated ADW scripts use `claude` CLI commands which may           ║
-║  consume API credits depending on your Claude Code configuration.        ║
-║                                                                           ║
-║  RECOMMENDED: Use the orchestrator instead (no API credits):             ║
-║    ./adws/orchestrate.sh <adw_id>                                        ║
-║                                                                           ║
-║  Or for full automation via hooks:                                       ║
-║    claude /adw_guide_plan                                                ║
-║    (Hook automatically chains remaining phases)                          ║
-║                                                                           ║
-║  ─────────────────────────────────────────────────────────────────────   ║
-║                                                                           ║
-║  If you REALLY want to use API-based automation (COSTS MONEY):           ║
-║                                                                           ║
-║    export ADW_ALLOW_API_USAGE=true                                       ║
-║    python adws/adw_plan.py <issue_number>                                ║
-║                                                                           ║
-║  Note: Setting ADW_ALLOW_API_USAGE=true will consume your API credits!  ║
-║                                                                           ║
-╚═══════════════════════════════════════════════════════════════════════════╝
-
-Command that was blocked:
-  Prompt: {prompt}
-  Model: {model}
-  ADW ID: {adw_id}
-  Agent: {agent_name}
-
-To use this command without API credits:
-  1. Use orchestrator: ./adws/orchestrate.sh {adw_id}
-  2. Or run manually: claude "{prompt}"
-""".format(
-            prompt=request.prompt[:100] + ("..." if len(request.prompt) > 100 else ""),
-            model=request.model,
-            adw_id=request.adw_id,
-            agent_name=request.agent_name,
-        )
-
-        print(warning, file=sys.stderr)
-        return AgentPromptResponse(
-            output="BLOCKED: API credit protection active. See stderr for details.",
-            success=False,
-            session_id=None
-        )
 
     # Check if Claude Code CLI is installed
     error_msg = check_claude_installed()
