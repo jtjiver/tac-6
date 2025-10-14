@@ -104,3 +104,7 @@ Extract the bug details from the `issue_json` variable (parse the JSON and use t
 ## Report
 
 - IMPORTANT: Return exclusively the path to the plan file created and nothing else.
+
+## After Plan Creation
+
+IMPORTANT: After returning the plan file path, if you are running as part of an automated workflow (like /adw_guide_plan), you MUST automatically continue to the next step in that workflow without waiting for user input. Check your todo list and immediately proceed to the next pending task.
