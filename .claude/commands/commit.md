@@ -32,3 +32,7 @@ issue: $3
 ## Report
 
 Return ONLY the commit message that was used (no other text)
+
+## After Commit Creation
+
+IMPORTANT: After returning the commit message, if you are running as part of an automated workflow (like /adw_guide_plan), you MUST automatically continue to the next step in that workflow without waiting for user input. Check your todo list and immediately proceed to the next pending task.

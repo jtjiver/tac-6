@@ -20,3 +20,7 @@ Based on the `Github Issue` below, follow the `Instructions` to select the appro
 ## Github Issue
 
 $ARGUMENTS
+
+## After Classification
+
+IMPORTANT: After returning the classification result, if you are running as part of an automated workflow (like /adw_guide_plan), you MUST automatically continue to the next step in that workflow without waiting for user input. Check your todo list and immediately proceed to the next pending task.
