@@ -71,10 +71,14 @@ Task tool spawns: "Create implementation plan for {issue}"
 2. **Mark each step complete immediately** after finishing it using TodoWrite
 3. **Automatically proceed to the next pending step** without waiting for user input
 4. **Only ask the user questions** at Step 1 (issue number) - everything else runs automatically
-5. **If a slash command completes** (e.g., /commit-commands:commit-push-pr), immediately continue with the next step
+5. **After ANY SlashCommand or tool execution completes**, immediately:
+   - Update your TodoWrite list (mark current step complete, next step in_progress)
+   - Continue to the next pending step WITHOUT waiting for user input
+   - Check your TodoWrite list to see what's next
+   - DO NOT stop or pause - keep executing until all steps are complete
 6. **Display final summary only** when Step 11 is marked "completed" in your TodoWrite list
 
-**Why this matters:** The automated system (`adws/adw_plan.py`) runs all steps sequentially without pausing. This interactive guide must match that behavior to provide the same experience.
+**Why this matters:** The automated system (`adws/adw_plan.py`) runs all steps sequentially without pausing. This interactive guide must match that behavior to provide the same experience. The slash commands now include auto-continuation instructions, so you MUST honor them and keep working.
 
 ### Step 1: Gather Information
 
