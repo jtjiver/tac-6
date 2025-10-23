@@ -76,6 +76,7 @@ def extract_repo_path(github_url: str) -> str:
     return github_url.replace("https://github.com/", "").replace(".git", "")
 
 
+# ANCHOR: fetch_issue
 def fetch_issue(issue_number: str, repo_path: str) -> GitHubIssue:
     """Fetch GitHub issue using gh CLI and return typed model."""
     # Use JSON output for structured data
@@ -121,8 +122,10 @@ def fetch_issue(issue_number: str, repo_path: str) -> GitHubIssue:
     except Exception as e:
         print(f"Error parsing issue data: {e}", file=sys.stderr)
         sys.exit(1)
+# ANCHOR_END: fetch_issue
 
 
+# ANCHOR: make_issue_comment
 def make_issue_comment(issue_id: str, comment: str) -> None:
     """Post a comment to a GitHub issue using gh CLI."""
     # Get repo information from git remote
@@ -155,6 +158,7 @@ def make_issue_comment(issue_id: str, comment: str) -> None:
     except Exception as e:
         print(f"Error posting comment: {e}", file=sys.stderr)
         raise
+# ANCHOR_END: make_issue_comment
 
 
 def mark_issue_in_progress(issue_id: str) -> None:

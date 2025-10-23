@@ -12,11 +12,14 @@ from typing import Any, TypeVar, Type, Union, Dict
 T = TypeVar('T')
 
 
+# ANCHOR: make_adw_id
 def make_adw_id() -> str:
     """Generate a short 8-character UUID for ADW tracking."""
     return str(uuid.uuid4())[:8]
+# ANCHOR_END: make_adw_id
 
 
+# ANCHOR: setup_logger
 def setup_logger(adw_id: str, trigger_type: str = "adw_plan_build") -> logging.Logger:
     """Set up logger that writes to both console and file using adw_id.
     
@@ -69,8 +72,9 @@ def setup_logger(adw_id: str, trigger_type: str = "adw_plan_build") -> logging.L
     # Log initial setup message
     logger.info(f"ADW Logger initialized - ID: {adw_id}")
     logger.debug(f"Log file: {log_file}")
-    
+
     return logger
+# ANCHOR_END: setup_logger
 
 
 def get_logger(adw_id: str) -> logging.Logger:

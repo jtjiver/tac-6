@@ -50,6 +50,7 @@ class ADWState:
         )
         return os.path.join(project_root, "agents", self.adw_id, self.STATE_FILENAME)
 
+    # ANCHOR: save
     def save(self, workflow_step: Optional[str] = None) -> None:
         """Save state to file in agents/{adw_id}/adw_state.json."""
         state_path = self.get_state_path()
@@ -71,6 +72,7 @@ class ADWState:
         self.logger.info(f"Saved state to {state_path}")
         if workflow_step:
             self.logger.info(f"State updated by: {workflow_step}")
+    # ANCHOR_END: save
 
     @classmethod
     def load(

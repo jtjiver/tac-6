@@ -95,6 +95,7 @@ def extract_adw_info(
         return None, None
 
 
+# ANCHOR: classify_issue
 def classify_issue(
     issue: GitHubIssue, adw_id: str, logger: logging.Logger
 ) -> Tuple[Optional[IssueClassSlashCommand], Optional[str]]:
@@ -144,8 +145,10 @@ def classify_issue(
         return None, f"Invalid command selected: {response.output}"
 
     return issue_command, None  # type: ignore
+# ANCHOR_END: classify_issue
 
 
+# ANCHOR: build_plan
 def build_plan(
     issue: GitHubIssue, command: str, adw_id: str, logger: logging.Logger
 ) -> AgentPromptResponse:
@@ -173,6 +176,7 @@ def build_plan(
     )
 
     return issue_plan_response
+# ANCHOR_END: build_plan
 
 
 def implement_plan(
@@ -202,6 +206,7 @@ def implement_plan(
     return implement_response
 
 
+# ANCHOR: generate_branch_name
 def generate_branch_name(
     issue: GitHubIssue,
     issue_class: IssueClassSlashCommand,
@@ -233,8 +238,10 @@ def generate_branch_name(
     branch_name = response.output.strip()
     logger.info(f"Generated branch name: {branch_name}")
     return branch_name, None
+# ANCHOR_END: generate_branch_name
 
 
+# ANCHOR: create_commit
 def create_commit(
     agent_name: str,
     issue: GitHubIssue,
@@ -270,8 +277,10 @@ def create_commit(
     commit_message = response.output.strip()
     logger.info(f"Created commit message: {commit_message}")
     return commit_message, None
+# ANCHOR_END: create_commit
 
 
+# ANCHOR: create_pull_request
 def create_pull_request(
     branch_name: str,
     issue: Optional[GitHubIssue],
@@ -323,6 +332,7 @@ def create_pull_request(
     pr_url = response.output.strip()
     logger.info(f"Created pull request: {pr_url}")
     return pr_url, None
+# ANCHOR_END: create_pull_request
 
 
 def ensure_plan_exists(state: ADWState, issue_number: str) -> str:

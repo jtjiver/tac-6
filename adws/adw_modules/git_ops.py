@@ -52,6 +52,7 @@ def check_pr_exists(branch_name: str) -> Optional[str]:
     return None
 
 
+# ANCHOR: create_branch
 def create_branch(branch_name: str) -> Tuple[bool, Optional[str]]:
     """Create and checkout a new branch. Returns (success, error_message)."""
     # Create branch
@@ -72,6 +73,7 @@ def create_branch(branch_name: str) -> Tuple[bool, Optional[str]]:
             return True, None
         return False, result.stderr
     return True, None
+# ANCHOR_END: create_branch
 
 
 def commit_changes(message: str) -> Tuple[bool, Optional[str]]:
@@ -96,6 +98,7 @@ def commit_changes(message: str) -> Tuple[bool, Optional[str]]:
     return True, None
 
 
+# ANCHOR: finalize_git_operations
 def finalize_git_operations(state: 'ADWState', logger: logging.Logger) -> None:
     """Standard git finalization: push branch and create/update PR."""
     branch_name = state.get("branch_name")
@@ -157,3 +160,4 @@ def finalize_git_operations(state: 'ADWState', logger: logging.Logger) -> None:
                 )
         else:
             logger.error(f"Failed to create PR: {error}")
+# ANCHOR_END: finalize_git_operations
