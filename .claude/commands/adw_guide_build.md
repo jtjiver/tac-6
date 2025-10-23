@@ -150,7 +150,7 @@ echo "📝 Log file initialized: $LOG_FILE"
 **CRITICAL:** Store `$LOG_FILE` path and use it in ALL subsequent steps. Every bash command block should append to `$LOG_FILE`.
 
 **File Reference:**
-- Automated: `adws/adw_modules/utils.py:setup_logger()` line 56-80
+- Automated: `adws/adw_modules/utils.py:setup_logger()` ANCHOR: `setup_logger`
 
 Display: "✅ Logging initialized: `{log_file}`"
 
@@ -186,8 +186,8 @@ Prompt: |
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/state.py:ADWState.load()` line 60-82
-- Build: `adws/adw_build.py` line 100-150
+- Automated: `adws/adw_modules/state.py:ADWState.load()` (function ~lines 78-100)
+- Build: `adws/adw_build.py` (section ~lines 100-150)
 
 **AFTER sub-agent returns state:**
 ```bash
@@ -243,7 +243,7 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 2: Completed - Verify Branch" >> $LO
 ```
 
 **File Reference:**
-- Automated: `adws/adw_build.py` line 152-180
+- Automated: `adws/adw_build.py` (section ~lines 152-180)
 
 Display: "✅ On branch: `{branch_name}`"
 
@@ -286,7 +286,7 @@ Prompt: |
 ```
 
 **File Reference:**
-- Automated: `adws/adw_build.py` line 182-210
+- Automated: `adws/adw_build.py` (section ~lines 182-210)
 
 **AFTER sub-agent returns plan file:**
 ```bash
@@ -343,8 +343,8 @@ This will automatically:
 8. Report what was implemented
 
 **File Reference:**
-- Automated: `adws/adw_modules/workflow_ops.py:implement_solution()` line 328-365
-- Calls: `adws/adw_modules/agent.py:execute_template("/implement")` line 262-299
+- Automated: `adws/adw_modules/workflow_ops.py:implement_plan()` (function ~lines 182-220)
+- Calls: `adws/adw_modules/agent.py:execute_template("/implement")` ANCHOR: `execute_template`
 - Executes: `.claude/commands/implement.md`
 - Model: `opus` for complex implementation
 - Agent folder: `agents/{adw_id}/sdlc_implementor/`
@@ -394,7 +394,7 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 5: Completed - Review Changes" >> $L
 ```
 
 **File Reference:**
-- Automated: `adws/adw_build.py` line 240-265
+- Automated: `adws/adw_build.py` (section ~lines 240-265)
 
 Display summary of changes to user.
 
@@ -435,10 +435,10 @@ This will automatically:
 6. Return the commit SHA
 
 **File Reference:**
-- Automated: `adws/adw_modules/workflow_ops.py:create_commit()` line 238-272
-- Calls: `adws/adw_modules/agent.py:execute_template("/commit")` line 262-299
+- Automated: `adws/adw_modules/workflow_ops.py:create_commit()` ANCHOR: `create_commit`
+- Calls: `adws/adw_modules/agent.py:execute_template("/commit")` ANCHOR: `execute_template`
 - Executes: `.claude/commands/commit.md`
-- Git ops: `adws/adw_modules/git_ops.py:commit_changes()` line 37-56
+- Git ops: `adws/adw_modules/git_ops.py:commit_changes()` (function ~lines 37-56)
 - Model: `sonnet` (fast commit generation)
 - Agent folder: `agents/{adw_id}/sdlc_implementor/` (reuses implementor folder)
 
@@ -484,8 +484,8 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 7: Completed - Update State" >> $LOG
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/state.py:ADWState.save()` line 38-58
-- Build: `adws/adw_build.py` line 290-310
+- Automated: `adws/adw_modules/state.py:ADWState.save()` ANCHOR: `save`
+- Build: `adws/adw_build.py` (section ~lines 290-310)
 
 Display: "✅ State updated: build_complete"
 
@@ -526,7 +526,7 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 8: Completed - Complete Build Phase"
 ```
 
 **File Reference:**
-- Automated: `adws/adw_build.py` line 312-330
+- Automated: `adws/adw_build.py` (section ~lines 312-330)
 
 **Update TodoWrite:** Mark Step 8 complete, Step 9 in_progress. Then immediately continue to Step 9.
 
@@ -737,7 +737,7 @@ fi
 ```
 
 **File Reference:**
-- State loading: `adws/adw_modules/state.py:ADWState.load()` line 60-82
+- State loading: `adws/adw_modules/state.py:ADWState.load()` (function ~lines 78-100)
 
 ## Variables
 
@@ -817,11 +817,11 @@ All file references point to the actual automated system implementation:
 
 - **Build Script**: `adws/adw_build.py`
 - **Workflow Logic**: `adws/adw_modules/workflow_ops.py`
-- **Agent Execution**: `adws/adw_modules/agent.py` (line 192-209 for `claude -p`)
-- **State Management**: `adws/adw_modules/state.py`
-- **Git Operations**: `adws/adw_modules/git_ops.py`
-- **GitHub API**: `adws/adw_modules/github.py`
-- **Utilities**: `adws/adw_modules/utils.py` (logging setup line 56-80)
+- **Agent Execution**: `adws/adw_modules/agent.py` ANCHOR: `execute_template`
+- **State Management**: `adws/adw_modules/state.py` ANCHOR: `save`
+- **Git Operations**: `adws/adw_modules/git_ops.py` ANCHOR: `create_branch`, `finalize_git_operations`
+- **GitHub API**: `adws/adw_modules/github.py` ANCHOR: `fetch_issue`, `make_issue_comment`
+- **Utilities**: `adws/adw_modules/utils.py` ANCHOR: `setup_logger`
 
 ## The Bottom Line
 
