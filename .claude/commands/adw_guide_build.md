@@ -54,30 +54,67 @@ Task tool spawns: "Create semantic commit for implementation"
 - ✅ More robust error handling
 - ✅ Better progress tracking
 
+## 🚨 CRITICAL: Logging and GitHub Comment Checklist 🚨
+
+**FOR EVERY STEP, YOU MUST DO ALL OF THESE:**
+
+### Before Starting a Step:
+```bash
+# 1. Log step start
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step {N}: Starting {step_name}" >> $LOG_FILE
+
+# 2. Post GitHub comment (if appropriate)
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_{agent_name}: ⏳ {step_description}"
+
+# 3. Update TodoWrite - mark step as "in_progress"
+```
+
+### While Doing the Step:
+- Execute the actual work as described
+- Log important events to `$LOG_FILE`
+
+### After Completing a Step:
+```bash
+# 1. Log step completion
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step {N}: Completed {step_name}" >> $LOG_FILE
+
+# 2. Post GitHub success comment
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_{agent_name}: ✅ {completion_message}"
+
+# 3. Update TodoWrite - mark step {N} complete, step {N+1} in_progress
+```
+
+**IF YOU SKIP ANY OF THESE, THE WORKFLOW TRACKING WILL BE INCOMPLETE!**
+
 ## Instructions
 
 **IMPORTANT:** This guide uses intelligent sub-agent delegation to automate the entire implementation phase. Just provide an ADW ID and the guide orchestrates everything automatically.
 
 **CRITICAL EXECUTION RULES:**
-1. **Never stop until all 8 steps are complete** - Check your TodoWrite list after EVERY step
+1. **Never stop until all 9 steps are complete** - Check your TodoWrite list after EVERY step
 2. **Mark each step complete immediately** after finishing it using TodoWrite
 3. **Automatically proceed to the next pending step** without waiting for user input
-4. **Only ask the user questions** at Step 1 (ADW ID) - everything else runs automatically
+4. **Only ask the user questions** at Step 0 (ADW ID) - everything else runs automatically
 5. **After ANY SlashCommand or tool execution completes**, immediately:
+   - Log completion to `$LOG_FILE`
+   - Post GitHub comment
    - Update your TodoWrite list (mark current step complete, next step in_progress)
    - Continue to the next pending step WITHOUT waiting for user input
    - Check your TodoWrite list to see what's next
    - DO NOT stop or pause - keep executing until all steps are complete
-6. **Display final summary only** when Step 8 is marked "completed" in your TodoWrite list
+6. **Display final summary only** when Step 9 is marked "completed" in your TodoWrite list
 
 **Why this matters:** The automated system (`adws/adw_build.py`) runs all steps sequentially without pausing. This interactive guide must match that behavior to provide the same experience. The slash commands now include auto-continuation instructions, so you MUST honor them and keep working.
 
-### Step 1: Load State and Initialize (Automated)
+### Step 0: Initialize Logging (MUST DO FIRST) ⚠️
+
+**This step happens BEFORE you ask for ADW ID!**
 
 Ask the user: "What is the ADW ID you want to continue working on?"
 
-**Initialize TodoWrite tracking:**
-Create todo list with all 8 steps:
+**As soon as user provides ADW ID, initialize TodoWrite tracking:**
+Create todo list with all 9 steps:
+0. Initialize Logging
 1. Load State and Initialize
 2. Verify Branch
 3. Locate Plan File
@@ -86,10 +123,47 @@ Create todo list with all 8 steps:
 6. Create Commit
 7. Update State
 8. Complete Build Phase
+9. Verify Logging and Comments
 
-Mark Step 1 as "in_progress" immediately.
+Mark Step 0 as "in_progress" immediately.
 
-Once provided, spawn a sub-agent to load and verify the state:
+**Initialize logging FIRST (before doing anything else):**
+
+```bash
+# CRITICAL: Create log file and store path in variable
+ADW_ID="{user_provided_adw_id}"
+# Create phase folder (matches automated system structure)
+mkdir -p agents/$ADW_ID/adw_build
+LOG_FILE="agents/$ADW_ID/adw_build/execution.log"
+
+# Write initial log entry
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ========================================" >> $LOG_FILE
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ADW Build Phase Initialized" >> $LOG_FILE
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ADW ID: $ADW_ID" >> $LOG_FILE
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Log file: $LOG_FILE" >> $LOG_FILE
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ========================================" >> $LOG_FILE
+
+# Display log file path for confirmation
+echo "📝 Log file initialized: $LOG_FILE"
+```
+
+**CRITICAL:** Store `$LOG_FILE` path and use it in ALL subsequent steps. Every bash command block should append to `$LOG_FILE`.
+
+**File Reference:**
+- Automated: `adws/adw_modules/utils.py:setup_logger()` line 56-80
+
+Display: "✅ Logging initialized: `{log_file}`"
+
+**Before continuing:** Mark Step 0 complete, mark Step 1 as in_progress.
+
+### Step 1: Load State and Initialize (Automated)
+
+**BEFORE starting Step 1:**
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 1: Starting - Load State and Initialize" >> $LOG_FILE
+```
+
+Spawn a sub-agent to load and verify the state:
 
 ```markdown
 # Use Task tool to delegate state loading
@@ -115,33 +189,57 @@ Prompt: |
 - Automated: `adws/adw_modules/state.py:ADWState.load()` line 60-82
 - Build: `adws/adw_build.py` line 100-150
 
-Initialize logging:
+**AFTER sub-agent returns state:**
 ```bash
-mkdir -p agents/{adw_id}/logs
-LOG_FILE="agents/{adw_id}/logs/adw_guide_build_$(date +%s).log"
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Build phase started for issue #{issue_number}" >> $LOG_FILE
-```
+# Extract issue number from state
+ISSUE_NUMBER="{issue_number_from_state}"
+BRANCH_NAME="{branch_name_from_state}"
 
-Post to GitHub:
-```bash
-gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Starting implementation phase"
+# Log state loaded
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 1: State loaded for issue #$ISSUE_NUMBER" >> $LOG_FILE
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 1: Branch: $BRANCH_NAME" >> $LOG_FILE
+
+# Post initial GitHub comment
+gh issue comment $ISSUE_NUMBER --body "[ADW-BOT] {adw_id}_ops: ✅ Starting implementation phase"
+
+# Log GitHub comment posted
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 1: Posted GitHub comment - Starting implementation" >> $LOG_FILE
+
+# Complete step
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 1: Completed - Load State and Initialize" >> $LOG_FILE
 ```
 
 Display: "Found workflow for issue #{issue_number} on branch `{branch_name}`"
 
+**Update TodoWrite:** Mark Step 1 complete, Step 2 in_progress. Then immediately continue to Step 2.
+
 ### Step 2: Verify Branch (Automated)
+
+**BEFORE starting Step 2:**
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 2: Starting - Verify Branch" >> $LOG_FILE
+```
 
 Automatically check and switch to correct branch:
 
 ```bash
 # This mimics: adws/adw_modules/git_ops.py:ensure_branch()
 CURRENT_BRANCH=$(git branch --show-current)
-if [ "$CURRENT_BRANCH" != "{branch_name}" ]; then
-  git checkout {branch_name}
-  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Switched to branch {branch_name}" >> $LOG_FILE
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 2: Current branch is $CURRENT_BRANCH" >> $LOG_FILE
+
+if [ "$CURRENT_BRANCH" != "$BRANCH_NAME" ]; then
+  git checkout $BRANCH_NAME
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 2: Switched to branch $BRANCH_NAME" >> $LOG_FILE
+else
+  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 2: Already on correct branch" >> $LOG_FILE
 fi
 
-gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Working on branch: \`{branch_name}\`"
+# Post GitHub comment
+gh issue comment $ISSUE_NUMBER --body "[ADW-BOT] {adw_id}_ops: ✅ Working on branch: \`$BRANCH_NAME\`"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 2: Posted GitHub comment - Branch verified" >> $LOG_FILE
+
+# Complete step
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 2: Completed - Verify Branch" >> $LOG_FILE
 ```
 
 **File Reference:**
@@ -149,7 +247,14 @@ gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Working on b
 
 Display: "✅ On branch: `{branch_name}`"
 
+**Update TodoWrite:** Mark Step 2 complete, Step 3 in_progress. Then immediately continue to Step 3.
+
 ### Step 3: Locate Plan File (Automated with Sub-Agent)
+
+**BEFORE starting Step 3:**
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 3: Starting - Locate Plan File" >> $LOG_FILE
+```
 
 **What This Step Does:**
 - Spawns sub-agent to locate the implementation plan
@@ -183,26 +288,39 @@ Prompt: |
 **File Reference:**
 - Automated: `adws/adw_build.py` line 182-210
 
-Store plan file path and log:
+**AFTER sub-agent returns plan file:**
 ```bash
-PLAN_FILE={plan_file_from_subagent}
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Using plan file: $PLAN_FILE" >> $LOG_FILE
-gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Found plan: \`$PLAN_FILE\`"
+PLAN_FILE="{plan_file_from_subagent}"
+
+# Log plan file found
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 3: Using plan file: $PLAN_FILE" >> $LOG_FILE
+
+# Post GitHub comment
+gh issue comment $ISSUE_NUMBER --body "[ADW-BOT] {adw_id}_ops: ✅ Found plan: \`$PLAN_FILE\`"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 3: Posted GitHub comment - Plan file located" >> $LOG_FILE
+
+# Complete step
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 3: Completed - Locate Plan File" >> $LOG_FILE
 ```
 
 Display: "✅ Plan file located: `{plan_file}`"
 
+**Update TodoWrite:** Mark Step 3 complete, Step 4 in_progress. Then immediately continue to Step 4.
+
 ### Step 4: Implement Solution (Automated with SlashCommand)
+
+**BEFORE starting Step 4:**
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 4: Starting - Implement Solution" >> $LOG_FILE
+
+# Post pre-implementation GitHub comment
+gh issue comment $ISSUE_NUMBER --body "[ADW-BOT] {adw_id}_sdlc_implementor: ⏳ Implementing solution from plan"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 4: Posted GitHub comment - Implementation starting" >> $LOG_FILE
+```
 
 **What This Step Does:**
 - Uses SlashCommand to implement all changes from the plan (creates agent artifacts)
 - Mimics `adws/adw_modules/workflow_ops.py:implement_solution()`
-
-Post pre-implementation status:
-```bash
-gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_sdlc_implementor: ✅ Implementing solution from plan"
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running /implement command" >> $LOG_FILE
-```
 
 Execute the implement slash command:
 
@@ -231,19 +349,29 @@ This will automatically:
 - Model: `opus` for complex implementation
 - Agent folder: `agents/{adw_id}/sdlc_implementor/`
 
-The slash command will implement the solution and report completion.
-
-Post implementation status:
+**AFTER /implement completes:**
 ```bash
-gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_sdlc_implementor: ✅ Solution implemented"
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Implementation complete" >> $LOG_FILE
+# Log implementation complete
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 4: Implementation complete" >> $LOG_FILE
+
+# Post GitHub success comment
+gh issue comment $ISSUE_NUMBER --body "[ADW-BOT] {adw_id}_sdlc_implementor: ✅ Solution implemented"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 4: Posted GitHub comment - Implementation complete" >> $LOG_FILE
+
+# Complete step
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 4: Completed - Implement Solution" >> $LOG_FILE
 ```
 
 Display: "✅ Implementation complete"
 
-**IMPORTANT:** Mark Step 4 as completed in TodoWrite and immediately proceed to Step 5. DO NOT wait for user input.
+**Update TodoWrite:** Mark Step 4 complete, Step 5 in_progress. Then immediately continue to Step 5.
 
 ### Step 5: Review Changes (Automated)
+
+**BEFORE starting Step 5:**
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 5: Starting - Review Changes" >> $LOG_FILE
+```
 
 **What This Step Does:**
 - Shows user what was changed
@@ -252,10 +380,17 @@ Display: "✅ Implementation complete"
 Automatically show changes:
 ```bash
 # This mimics: adws/adw_build.py review changes section
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 5: Running git status" >> $LOG_FILE
 git status
+
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 5: Running git diff --stat" >> $LOG_FILE
 git diff --stat
 
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Changes reviewed" >> $LOG_FILE
+# Log changes reviewed
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 5: Changes reviewed" >> $LOG_FILE
+
+# Complete step
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 5: Completed - Review Changes" >> $LOG_FILE
 ```
 
 **File Reference:**
@@ -263,22 +398,30 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Changes reviewed" >> $LOG_FILE
 
 Display summary of changes to user.
 
+**Update TodoWrite:** Mark Step 5 complete, Step 6 in_progress. Then immediately continue to Step 6.
+
 ### Step 6: Create Commit (Automated with SlashCommand)
+
+**BEFORE starting Step 6:**
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 6: Starting - Create Commit" >> $LOG_FILE
+```
 
 **What This Step Does:**
 - Uses SlashCommand to create semantic commit (creates agent artifacts)
 - Mimics `adws/adw_modules/workflow_ops.py:create_commit()`
 
-Post pre-commit status:
-```bash
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Creating commit" >> $LOG_FILE
-```
-
 Execute the commit slash command:
 
 ```bash
+# Extract issue class from state (should be "feature", "bug", or "chore" WITHOUT slash)
+ISSUE_CLASS="{issue_class_from_state_without_slash}"
+
+# Get issue JSON for commit context
+ISSUE_JSON=$(gh issue view $ISSUE_NUMBER --json number,title,body)
+
 # Use SlashCommand tool to create agent artifacts
-/commit sdlc_implementor {type} '{issue_json}'
+/commit sdlc_implementor $ISSUE_CLASS "$ISSUE_JSON"
 ```
 
 Where `{type}` is `feature`, `bug`, or `chore` (without the slash).
@@ -299,17 +442,29 @@ This will automatically:
 - Model: `sonnet` (fast commit generation)
 - Agent folder: `agents/{adw_id}/sdlc_implementor/` (reuses implementor folder)
 
-Post commit completion:
+**AFTER /commit completes:**
 ```bash
-gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_sdlc_implementor: ✅ Implementation committed"
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Changes committed" >> $LOG_FILE
+# Log commit created
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 6: Changes committed" >> $LOG_FILE
+
+# Post GitHub success comment
+gh issue comment $ISSUE_NUMBER --body "[ADW-BOT] {adw_id}_sdlc_implementor: ✅ Implementation committed"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 6: Posted GitHub comment - Commit created" >> $LOG_FILE
+
+# Complete step
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 6: Completed - Create Commit" >> $LOG_FILE
 ```
 
 Display: "✅ Changes committed successfully"
 
-**IMPORTANT:** Mark Step 6 as completed in TodoWrite and immediately proceed to Step 7. DO NOT wait for user input.
+**Update TodoWrite:** Mark Step 6 complete, Step 7 in_progress. Then immediately continue to Step 7.
 
 ### Step 7: Update State (Automated)
+
+**BEFORE starting Step 7:**
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 7: Starting - Update State" >> $LOG_FILE
+```
 
 **What This Step Does:**
 - Updates workflow state to indicate build completion
@@ -322,7 +477,10 @@ jq '.current_phase = "build_complete" | .plan_file = "'"$PLAN_FILE"'"' \
   agents/{adw_id}/adw_state.json > agents/{adw_id}/adw_state.json.tmp && \
   mv agents/{adw_id}/adw_state.json.tmp agents/{adw_id}/adw_state.json
 
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] State updated to build_complete" >> $LOG_FILE
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 7: State updated to build_complete" >> $LOG_FILE
+
+# Complete step
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 7: Completed - Update State" >> $LOG_FILE
 ```
 
 **File Reference:**
@@ -331,29 +489,92 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] State updated to build_complete" >> $LOG_
 
 Display: "✅ State updated: build_complete"
 
+**Update TodoWrite:** Mark Step 7 complete, Step 8 in_progress. Then immediately continue to Step 8.
+
 ### Step 8: Complete Build Phase (Automated)
+
+**BEFORE starting Step 8:**
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 8: Starting - Complete Build Phase" >> $LOG_FILE
+```
 
 **What This Step Does:**
 - Posts completion messages
-- Provides next steps guidance
+- Provides comprehensive summary
+- Posts final state to GitHub
 
 Post completion:
 ```bash
-gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Implementation phase completed"
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Build phase completed" >> $LOG_FILE
+# Post completion comment
+gh issue comment $ISSUE_NUMBER --body "[ADW-BOT] {adw_id}_ops: ✅ Implementation phase completed"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 8: Posted GitHub comment - Build phase completed" >> $LOG_FILE
 
-# Post final state
+# Post final state to GitHub
 FINAL_STATE=$(cat agents/{adw_id}/adw_state.json | jq -r .)
-gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: 📋 Build phase state:
+gh issue comment $ISSUE_NUMBER --body "[ADW-BOT] {adw_id}_ops: 📋 Build phase state:
 \`\`\`json
 $FINAL_STATE
 \`\`\`"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 8: Posted GitHub comment - Final state" >> $LOG_FILE
+
+# Log build phase complete
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 8: Build phase completed" >> $LOG_FILE
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ========================================" >> $LOG_FILE
+
+# Complete step
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 8: Completed - Complete Build Phase" >> $LOG_FILE
 ```
 
 **File Reference:**
 - Automated: `adws/adw_build.py` line 312-330
 
-**FINAL STEP:** Mark Step 8 as completed in TodoWrite. Verify ALL 8 steps show "completed" status. You are now done with the build phase.
+**Update TodoWrite:** Mark Step 8 complete, Step 9 in_progress. Then immediately continue to Step 9.
+
+### Step 9: Verify Logging and Comments (FINAL CHECK) ✅
+
+**BEFORE starting Step 9:**
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 9: Starting - Verify Logging and Comments" >> $LOG_FILE
+```
+
+**What This Step Does:**
+- Verifies all logging was captured
+- Verifies GitHub comments were posted
+- Final validation before completion
+
+Verify logging and comments:
+```bash
+# Verify log file exists and has entries
+if [ ! -f "$LOG_FILE" ]; then
+  echo "❌ ERROR: Log file not found at $LOG_FILE"
+  exit 1
+fi
+
+# Count log entries
+LOG_ENTRIES=$(wc -l < "$LOG_FILE")
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 9: Log file has $LOG_ENTRIES entries" >> $LOG_FILE
+
+# Show log summary to user
+echo "=== Build Log Summary ==="
+echo "Log file: $LOG_FILE"
+echo "Total entries: $LOG_ENTRIES"
+echo ""
+echo "Recent entries:"
+tail -10 "$LOG_FILE"
+
+# Verify GitHub comments were posted
+echo ""
+echo "=== GitHub Comments Verification ==="
+echo "Checking issue #$ISSUE_NUMBER for ADW-BOT comments..."
+gh issue view $ISSUE_NUMBER --comments | grep "ADW-BOT.*{adw_id}" | tail -5
+
+# Complete step
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 9: Completed - Verify Logging and Comments" >> $LOG_FILE
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ========================================" >> $LOG_FILE
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] ALL STEPS COMPLETE - Build phase successful" >> $LOG_FILE
+```
+
+**Update TodoWrite:** Mark Step 9 complete. Verify ALL 10 steps (0-9) show "completed" status.
 
 Display comprehensive summary to user:
 
@@ -366,24 +587,42 @@ Display comprehensive summary to user:
 - Located plan file: `{plan_file}`
 - Implemented all changes from plan
 - Changes committed to branch
+- State updated to: build_complete
 
 **Artifacts created (identical to automated system):**
 ```
 agents/{adw_id}/
 ├── adw_state.json                           # Updated state
-├── logs/
-│   └── adw_guide_build_{timestamp}.log      # Build phase log
-└── sdlc_implementor/                        # Implementation artifacts
-    └── output/
+├── adw_build/                               # PHASE folder for build
+│   └── execution.log                        # Phase-level log (matches automated)
+└── sdlc_implementor/                        # AGENT folder (SDLC implementor artifacts)
+    ├── prompts/
+    │   ├── implement.txt
+    │   └── commit.txt
+    ├── raw_output.jsonl
+    └── raw_output.json
 ```
+
+**Folder Structure Notes:**
+- **PHASE folders** (`adw_build/`): Created by us, contain phase execution logs
+- **AGENT folders** (`sdlc_implementor/`): Created automatically by SlashCommand tool
+- **SDLC naming**: "Software Development Life Cycle" agents for planning and implementation
+```
+
+**Logging verification:**
+- Log file: `{log_file}`
+- Total log entries: {log_entry_count}
+- All steps logged ✅
+
+**GitHub issue tracking:**
+- Issue #{issue_number} updated with {comment_count} ADW-BOT comments
+- All major milestones tracked ✅
 
 **Sub-agents spawned (all in same session = $0):**
 1. ✅ State loader
 2. ✅ Plan file locator
-3. ✅ Solution implementor
-4. ✅ Commit creator
-
-**GitHub issue updated:** Issue #{issue_number} has been updated with progress
+3. ✅ Solution implementor (via /implement)
+4. ✅ Commit creator (via /commit)
 
 **Next steps:**
 1. Run tests: `/adw_guide_test {adw_id}`
@@ -394,6 +633,8 @@ agents/{adw_id}/
 
 **Time saved:** ~5-8 minutes of manual implementation and commits!
 ```
+
+**FINAL STEP:** You are now DONE with the build phase. All 10 steps are complete.
 
 ## Intelligent Architecture Comparison
 
@@ -407,19 +648,25 @@ Claude Code CLI Session
 
 Time: ~15-20 minutes of hands-on work
 Cost: $0 (Claude Pro)
+Logging: Manual (often forgotten)
+GitHub comments: Manual (often forgotten)
 ```
 
-### New Intelligent Mode (Sub-Agent Delegation)
+### New Intelligent Mode (Sub-Agent Delegation with Tracking)
 ```
 Claude Code CLI Session
 ├── You run: /adw_guide_build {adw_id}
+├── Auto-initialize: Logging and GitHub tracking
 ├── Task spawns: State loader (runs automatically)
 ├── Task spawns: Plan locator (runs automatically)
-├── Task spawns: Implementor (runs automatically)
-└── Task spawns: Committer (runs automatically)
+├── Task spawns: Implementor (runs automatically + logs)
+├── Task spawns: Committer (runs automatically + logs)
+└── Auto-verify: All logs and comments created
 
 Time: ~3-5 minutes (mostly automated)
 Cost: $0 (all sub-agents in same Claude Pro session)
+Logging: Automatic, complete, timestamped
+GitHub comments: Automatic at every step
 ```
 
 ### Automated Mode (External Processes - For Reference)
@@ -430,6 +677,8 @@ adw_plan_build.py → adw_build.py
 
 Time: ~8-10 minutes
 Cost: $$$ (2 separate Claude API calls)
+Logging: Automatic
+GitHub comments: Automatic
 ```
 
 ## Sub-Agent Best Practices
@@ -497,6 +746,20 @@ fi
 
 ## Logging and Issue Updates
 
+### Log File Format
+All logs are created in `agents/{adw_id}/adw_build/execution.log` (matches automated system) with timestamped entries:
+```
+[2025-10-22T17:19:24Z] ========================================
+[2025-10-22T17:19:24Z] ADW Build Phase Initialized
+[2025-10-22T17:19:24Z] ADW ID: 61d49d73
+[2025-10-22T17:19:24Z] ========================================
+[2025-10-22T17:19:25Z] Step 1: Starting - Load State and Initialize
+[2025-10-22T17:19:26Z] Step 1: State loaded for issue #20
+[2025-10-22T17:19:26Z] Step 1: Completed - Load State and Initialize
+...
+[2025-10-22T17:25:00Z] ALL STEPS COMPLETE - Build phase successful
+```
+
 ### GitHub Issue Comment Format
 All status updates follow this format:
 ```
@@ -504,39 +767,49 @@ All status updates follow this format:
 ```
 
 Agent names used in build phase:
-- `ops` - Operational messages (starting, completion)
+- `ops` - Operational messages (starting, completion, state)
 - `sdlc_implementor` - Implementation-specific messages
 
 Common emojis:
 - ✅ Success/completion
+- ⏳ In progress
 - ❌ Error
 - ⚠️ Warning
+- 📋 Information/state
 
-### Logging Pattern
-Logs are created in `agents/{adw_id}/logs/adw_guide_build_{timestamp}.log` with entries like:
+Example sequence of comments for a successful build:
 ```
-[2025-10-12T16:35:00Z] Build phase started for issue #123
-[2025-10-12T16:35:15Z] Using plan file: specs/issue-123-adw-abc12345-feature.md
-[2025-10-12T16:36:45Z] Running /implement command
-[2025-10-12T16:40:00Z] Implementation complete
-[2025-10-12T16:40:30Z] Changes committed
-[2025-10-12T16:40:35Z] Build phase completed
+[ADW-BOT] 61d49d73_ops: ✅ Starting implementation phase
+[ADW-BOT] 61d49d73_ops: ✅ Working on branch: `feature-issue-20-adw-61d49d73-social-media-footer`
+[ADW-BOT] 61d49d73_ops: ✅ Found plan: `specs/issue-20-adw-61d49d73-sdlc_planner-social-media-footer.md`
+[ADW-BOT] 61d49d73_sdlc_implementor: ⏳ Implementing solution from plan
+[ADW-BOT] 61d49d73_sdlc_implementor: ✅ Solution implemented
+[ADW-BOT] 61d49d73_sdlc_implementor: ✅ Implementation committed
+[ADW-BOT] 61d49d73_ops: ✅ Implementation phase completed
+[ADW-BOT] 61d49d73_ops: 📋 Build phase state: { ... }
 ```
 
 ## What to Do
 
+- **DO** initialize logging FIRST (Step 0)
+- **DO** log every step start and completion to `$LOG_FILE`
+- **DO** post GitHub comments at major milestones
 - **DO** use Task tool for complex implementation
 - **DO** spawn sub-agents for time-consuming tasks
 - **DO** let sub-agents handle errors and retries
 - **DO** keep user informed of progress
 - **DO** create same artifacts as automated system
-- **DO** post status updates to GitHub issues
+- **DO** verify logging and comments at the end
 
 ## What NOT to Do
 
+- **DON'T** skip Step 0 (logging initialization)
+- **DON'T** forget to log step start/completion
+- **DON'T** forget to post GitHub comments
 - **DON'T** spawn external processes (costs money)
 - **DON'T** manually run commands when sub-agent can do it
 - **DON'T** call Anthropic API directly (Claude Code handles it)
+- **DON'T** forget to update TodoWrite after each step
 
 ## File References Summary
 
@@ -548,7 +821,7 @@ All file references point to the actual automated system implementation:
 - **State Management**: `adws/adw_modules/state.py`
 - **Git Operations**: `adws/adw_modules/git_ops.py`
 - **GitHub API**: `adws/adw_modules/github.py`
-- **Utilities**: `adws/adw_modules/utils.py`
+- **Utilities**: `adws/adw_modules/utils.py` (logging setup line 56-80)
 
 ## The Bottom Line
 
@@ -558,5 +831,7 @@ This intelligent guide with sub-agent delegation gives you:
 ✨ **The zero cost of interactive Claude Pro**
 ✨ **The speed of focused sub-agents**
 ✨ **The reliability of sub-agent error handling**
+✨ **Complete logging and GitHub tracking**
+✨ **Verification that nothing was missed**
 
 All in one Claude Code session! 🚀
