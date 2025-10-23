@@ -330,6 +330,7 @@ To use this command without API credits:
         return AgentPromptResponse(output=error_msg, success=False, session_id=None)
 
 
+# ANCHOR: execute_template
 def execute_template(request: AgentTemplateRequest) -> AgentPromptResponse:
     """Execute a Claude Code template with slash command and arguments."""
     # Override model based on slash command mapping
@@ -368,3 +369,4 @@ def execute_template(request: AgentTemplateRequest) -> AgentPromptResponse:
 
     # Execute and return response (prompt_claude_code now handles all parsing)
     return prompt_claude_code(prompt_request)
+# ANCHOR_END: execute_template
