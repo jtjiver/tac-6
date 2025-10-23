@@ -187,9 +187,9 @@ Prompt: |
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/state.py:ADWState.load()` line 60-82
-- Used by: `adws/adw_test.py` line 859
-- Logging: `adws/adw_modules/utils.py:setup_logger()` line 56-80
+- Automated: `adws/adw_modules/state.py:ADWState.load()` (function ~lines 78-109)
+- Used by: `adws/adw_test.py` (main execution ~line 859)
+- Logging: `adws/adw_modules/utils.py:ANCHOR: setup_logger`
 
 **AFTER state loads:**
 ```bash
@@ -257,12 +257,12 @@ Prompt: |
      - Failure details (test name, error message, execution command)
   5. Return results in JSON format
 
-  File Reference: This mimics adws/adw_test.py:run_tests() line 219-238
+  File Reference: This mimics adws/adw_test.py:run_tests() (function ~lines 219-238)
 ```
 
 **File Reference:**
-- Automated: `adws/adw_test.py:run_tests()` line 219-238
-- Calls: `adws/adw_modules/agent.py:execute_template("/test")` line 262-299
+- Automated: `adws/adw_test.py:run_tests()` (function ~lines 219-238)
+- Calls: `adws/adw_modules/agent.py:ANCHOR: execute_template`
 - Executes: `.claude/commands/test.md`
 
 Store the test results.
@@ -321,8 +321,8 @@ This will automatically:
 **IMPORTANT:** Only fix this specific test. Do not modify other tests.
 
 **File Reference:**
-- Automated: `adws/adw_test.py:resolve_failed_tests()` line 308-377
-- Calls: `adws/adw_modules/agent.py:execute_template("/resolve_failed_test")` line 262-299
+- Automated: `adws/adw_test.py:resolve_failed_tests()` (function ~lines 308-377)
+- Calls: `adws/adw_modules/agent.py:ANCHOR: execute_template`
 - Executes: `.claude/commands/resolve_failed_test.md`
 
 **AFTER resolution attempts:**
@@ -511,9 +511,9 @@ This will automatically:
 **IMPORTANT:** Stop on first E2E test failure.
 
 **File Reference:**
-- Automated: `adws/adw_test.py:run_e2e_tests()` line 489-521
-- Executes: `adws/adw_test.py:execute_single_e2e_test()` line 524-610
-- Calls: `adws/adw_modules/agent.py:execute_template("/test_e2e")` line 262-299
+- Automated: `adws/adw_test.py:run_e2e_tests()` (function ~lines 489-521)
+- Executes: `adws/adw_test.py:execute_single_e2e_test()` (function ~lines 524-610)
+- Calls: `adws/adw_modules/agent.py:ANCHOR: execute_template`
 - Executes: `.claude/commands/test_e2e.md`
 
 **AFTER E2E tests complete:**
@@ -570,8 +570,8 @@ This will automatically:
 **IMPORTANT:** Only fix issues related to this specific E2E test.
 
 **File Reference:**
-- Automated: `adws/adw_test.py:resolve_failed_e2e_tests()` line 662-731
-- Calls: `adws/adw_modules/agent.py:execute_template("/resolve_failed_e2e_test")` line 262-299
+- Automated: `adws/adw_test.py:resolve_failed_e2e_tests()` (function ~lines 662-731)
+- Calls: `adws/adw_modules/agent.py:ANCHOR: execute_template`
 - Executes: `.claude/commands/resolve_failed_e2e_test.md`
 
 **AFTER E2E resolution attempts:**
@@ -639,8 +639,8 @@ This will automatically:
 8. Return the commit SHA
 
 **File Reference:**
-- Automated: `adws/adw_test.py:create_commit()` line 1033
-- Calls: `adws/adw_modules/workflow_ops.py:create_commit()` line 238-272
+- Automated: `adws/adw_test.py:create_commit()` (main execution ~line 1033)
+- Calls: `adws/adw_modules/workflow_ops.py:ANCHOR: create_commit`
 - Executes: `.claude/commands/commit.md`
 
 **AFTER commit completes:**
@@ -664,7 +664,7 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 7: Completed - Update State and Comm
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/state.py:ADWState.save()` line 38-58
+- Automated: `adws/adw_modules/state.py:ANCHOR: save`
 
 **Update TodoWrite:** Mark Step 7 complete, Step 8 in_progress. Then immediately continue to Step 8.
 
@@ -708,7 +708,7 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 8: Completed - Post Comprehensive Te
 ```
 
 **File Reference:**
-- Automated: `adws/adw_test.py:log_test_results()` line 149-217
+- Automated: `adws/adw_test.py:log_test_results()` (function ~lines 149-217)
 
 **Update TodoWrite:** Mark Step 8 complete, Step 9 in_progress. Then immediately continue to Step 9.
 
@@ -742,7 +742,7 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Step 9: Completed - Push Changes" >> $LOG
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/git_ops.py:finalize_git_operations()` line 80-139
+- Automated: `adws/adw_modules/git_ops.py:ANCHOR: finalize_git_operations`
 
 **Update TodoWrite:** Mark Step 9 complete, Step 10 in_progress. Then immediately continue to Step 10.
 
@@ -1022,16 +1022,16 @@ Example sequence of comments for a successful test run:
 All file references point to the actual automated system implementation:
 
 - **Test Orchestrator**: `adws/adw_test.py`
-- **Test Execution**: `adws/adw_test.py:run_tests()` line 219-238
-- **Test Resolution**: `adws/adw_test.py:resolve_failed_tests()` line 308-377
-- **E2E Test Execution**: `adws/adw_test.py:run_e2e_tests()` line 489-521
-- **E2E Test Resolution**: `adws/adw_test.py:resolve_failed_e2e_tests()` line 662-731
+- **Test Execution**: `adws/adw_test.py:run_tests()` (function ~lines 219-238)
+- **Test Resolution**: `adws/adw_test.py:resolve_failed_tests()` (function ~lines 308-377)
+- **E2E Test Execution**: `adws/adw_test.py:run_e2e_tests()` (function ~lines 489-521)
+- **E2E Test Resolution**: `adws/adw_test.py:resolve_failed_e2e_tests()` (function ~lines 662-731)
 - **Workflow Operations**: `adws/adw_modules/workflow_ops.py`
 - **Agent Execution**: `adws/adw_modules/agent.py`
 - **State Management**: `adws/adw_modules/state.py`
 - **Git Operations**: `adws/adw_modules/git_ops.py`
 - **GitHub API**: `adws/adw_modules/github.py`
-- **Utilities**: `adws/adw_modules/utils.py` (logging setup line 56-80)
+- **Utilities**: `adws/adw_modules/utils.py` (ANCHOR: setup_logger)
 - **Slash Commands**:
   - `.claude/commands/test.md`
   - `.claude/commands/resolve_failed_test.md`
