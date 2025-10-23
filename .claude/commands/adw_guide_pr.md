@@ -134,15 +134,15 @@ Prompt: |
   7. Return state data as JSON
 
   File Reference:
-  - Mimics: adws/adw_modules/state.py:ADWState.load() line 60-82
-  - Logging: adws/adw_modules/utils.py:setup_logger() line 56-80
-  - GitHub: adws/adw_modules/github.py:make_issue_comment() line 95-127
+  - Mimics: adws/adw_modules/state.py:ADWState.load() ANCHOR: `save`
+  - Logging: adws/adw_modules/utils.py:setup_logger() ANCHOR: `setup_logger`
+  - GitHub: adws/adw_modules/github.py:make_issue_comment() ANCHOR: `make_issue_comment`
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/state.py:ADWState.load()` line 60-82
-- Logging: `adws/adw_modules/utils.py:setup_logger()` line 56-80
-- GitHub: `adws/adw_modules/github.py:make_issue_comment()` line 95-127
+- Automated: `adws/adw_modules/state.py:ADWState.load()` ANCHOR: `save`
+- Logging: `adws/adw_modules/utils.py:setup_logger()` ANCHOR: `setup_logger`
+- GitHub: `adws/adw_modules/github.py:make_issue_comment()` ANCHOR: `make_issue_comment`
 
 Store the state data for subsequent steps.
 
@@ -197,12 +197,12 @@ Prompt: |
   - Return "ready" status
 
   File Reference:
-  - Mimics: adws/adw_modules/git_ops.py:finalize_git_operations() line 99-139
+  - Mimics: adws/adw_modules/git_ops.py:finalize_git_operations() ANCHOR: `finalize_git_operations`
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/git_ops.py:finalize_git_operations()` line 99-139
-- Git ops: `adws/adw_modules/git_ops.py:get_current_branch()` line 15-22
+- Automated: `adws/adw_modules/git_ops.py:finalize_git_operations()` ANCHOR: `finalize_git_operations`
+- Git ops: `adws/adw_modules/git_ops.py:get_current_branch()` (function ~lines 15-22)
 
 Display verification results to user.
 
@@ -234,11 +234,11 @@ Prompt: |
   Return status: "needs_push" or "up_to_date"
 
   File Reference:
-  - Mimics: adws/adw_modules/git_ops.py:push_branch() line 24-32
+  - Mimics: adws/adw_modules/git_ops.py:push_branch() (function ~lines 24-32)
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/git_ops.py:push_branch()` line 24-32
+- Automated: `adws/adw_modules/git_ops.py:push_branch()` (function ~lines 24-32)
 
 Store the remote status for next step.
 
@@ -275,13 +275,13 @@ Prompt: |
   Return "success" or error message
 
   File Reference:
-  - Mimics: adws/adw_modules/git_ops.py:push_branch() line 24-32
-  - Mimics: adws/adw_modules/git_ops.py:finalize_git_operations() line 112-118
+  - Mimics: adws/adw_modules/git_ops.py:push_branch() (function ~lines 24-32)
+  - Mimics: adws/adw_modules/git_ops.py:finalize_git_operations() ANCHOR: `finalize_git_operations`
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/git_ops.py:push_branch()` line 24-32
-- Automated: `adws/adw_modules/git_ops.py:finalize_git_operations()` line 112-118
+- Automated: `adws/adw_modules/git_ops.py:push_branch()` (function ~lines 24-32)
+- Automated: `adws/adw_modules/git_ops.py:finalize_git_operations()` ANCHOR: `finalize_git_operations`
 
 If branch was already up to date, skip this step and log it.
 
@@ -327,8 +327,8 @@ This will automatically:
 12. Return the PR URL
 
 **File Reference:**
-- Automated: `adws/adw_modules/workflow_ops.py:create_pull_request()` line 275-325
-- Calls: `adws/adw_modules/agent.py:execute_template("/pull_request")` line 262-299
+- Automated: `adws/adw_modules/workflow_ops.py:create_pull_request()` ANCHOR: `create_pull_request`
+- Calls: `adws/adw_modules/agent.py:execute_template("/pull_request")` ANCHOR: `execute_template`
 - Executes: `.claude/commands/pull_request.md`
 
 Post PR creation:
@@ -360,7 +360,7 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] State updated to complete" >> $LOG_FILE
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/state.py:ADWState.save()` line 38-58
+- Automated: `adws/adw_modules/state.py:ADWState.save()` ANCHOR: `save`
 
 Display: "✅ State updated to complete"
 
@@ -371,7 +371,7 @@ Display: "✅ State updated to complete"
 **What This Step Does:**
 - Spawns a sub-agent to post comprehensive completion messages
 - Updates GitHub issue with final status
-- Mimics completion pattern from `adws/adw_plan.py` line 266-278
+- Mimics completion pattern from `adws/adw_plan.py` (section ~lines 266-278)
 
 Delegate completion reporting to sub-agent:
 
@@ -421,13 +421,13 @@ Prompt: |
   Return "completed" status
 
   File Reference:
-  - Mimics: adws/adw_plan.py line 266-278
-  - GitHub: adws/adw_modules/github.py:make_issue_comment()
+  - Mimics: adws/adw_plan.py (section ~lines 266-278)
+  - GitHub: adws/adw_modules/github.py:make_issue_comment() ANCHOR: `make_issue_comment`
 ```
 
 **File Reference:**
-- Automated: Similar to `adws/adw_plan.py` completion pattern line 266-278
-- GitHub: `adws/adw_modules/github.py:make_issue_comment()` line 95-127
+- Automated: Similar to `adws/adw_plan.py` completion pattern (section ~lines 266-278)
+- GitHub: `adws/adw_modules/github.py:make_issue_comment()` ANCHOR: `make_issue_comment`
 
 **IMPORTANT:** Mark Step 7 as completed in TodoWrite and immediately proceed to Step 8. DO NOT wait for user input.
 
@@ -626,7 +626,7 @@ fi
 ```
 
 **File Reference:**
-- State loading: `adws/adw_modules/state.py:ADWState.load()` line 60-82
+- State loading: `adws/adw_modules/state.py:ADWState.load()` ANCHOR: `save`
 
 ## Logging and Issue Updates
 
@@ -713,20 +713,20 @@ Closes #{issue_number}
 All file references point to the actual automated system implementation:
 
 - **Git Operations**: `adws/adw_modules/git_ops.py`
-  - `push_branch()` line 24-32
-  - `check_pr_exists()` line 35-52
-  - `finalize_git_operations()` line 99-139
+  - `push_branch()` (function ~lines 24-32)
+  - `check_pr_exists()` (function ~lines 35-52)
+  - `finalize_git_operations()` ANCHOR: `finalize_git_operations`
 - **Workflow Operations**: `adws/adw_modules/workflow_ops.py`
-  - `create_pull_request()` line 275-325
+  - `create_pull_request()` ANCHOR: `create_pull_request`
 - **Agent Execution**: `adws/adw_modules/agent.py`
-  - `execute_template()` line 262-299
+  - `execute_template()` ANCHOR: `execute_template`
 - **State Management**: `adws/adw_modules/state.py`
-  - `ADWState.load()` line 60-82
-  - `ADWState.save()` line 38-58
+  - `ADWState.load()` ANCHOR: `save`
+  - `ADWState.save()` ANCHOR: `save`
 - **GitHub API**: `adws/adw_modules/github.py`
-  - `make_issue_comment()` line 95-127
+  - `make_issue_comment()` ANCHOR: `make_issue_comment`
 - **Utilities**: `adws/adw_modules/utils.py`
-  - `setup_logger()` line 56-80
+  - `setup_logger()` ANCHOR: `setup_logger`
 - **Slash Commands**: `.claude/commands/pull_request.md`
 
 ## The Bottom Line

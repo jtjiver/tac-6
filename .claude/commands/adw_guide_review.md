@@ -134,13 +134,13 @@ Prompt: |
   5. Post to GitHub: gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Starting review phase"
   6. Return the state data including issue_number, branch_name, plan_file
 
-  File Reference: This mimics adws/adw_review.py lines 432-492
+  File Reference: This mimics adws/adw_review.py (main() ~lines 432-492)
 ```
 
 **File Reference:**
-- Automated: `adws/adw_review.py` lines 432-492
-- State loading: `adws/adw_modules/state.py:ADWState.load()` line 60-82
-- Logging: `adws/adw_modules/utils.py:setup_logger()` line 56-80
+- Automated: `adws/adw_review.py` (main() ~lines 432-492)
+- State loading: `adws/adw_modules/state.py` ANCHOR: save (ADWState.load() adjacent)
+- Logging: `adws/adw_modules/utils.py` ANCHOR: setup_logger
 
 Store the state data for subsequent steps.
 
@@ -172,11 +172,11 @@ Prompt: |
 
   Return ONLY the full absolute path to the spec file.
 
-  File Reference: This mimics adws/adw_modules/workflow_ops.py:find_spec_file() lines 537-584
+  File Reference: This mimics adws/adw_modules/workflow_ops.py:find_spec_file() (~lines 537-584)
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/workflow_ops.py:find_spec_file()` lines 537-584
+- Automated: `adws/adw_modules/workflow_ops.py:find_spec_file()` (~lines 537-584)
 
 Store the spec file path.
 
@@ -220,8 +220,8 @@ This will automatically:
    - screenshots: array of screenshot paths
 
 **File Reference:**
-- Automated: `adws/adw_review.py:run_review()` lines 90-144
-- Calls: `adws/adw_modules/agent.py:execute_template()` line 262-299
+- Automated: `adws/adw_review.py:run_review()` (~lines 90-144)
+- Calls: `adws/adw_modules/agent.py` ANCHOR: execute_template
 - Executes: `.claude/commands/review.md`
 
 Store the review result JSON.
@@ -265,15 +265,15 @@ Prompt: |
   Return the updated review result JSON with public URLs.
 
   File Reference:
-  - Mimics: adws/adw_review.py:upload_and_map_screenshots() lines 263-322
+  - Mimics: adws/adw_review.py:upload_and_map_screenshots() (~lines 263-322)
   - Uses: adws/adw_modules/r2_uploader.py:R2Uploader
-  - Upload method: r2_uploader.py:upload_screenshots() lines 99-126
+  - Upload method: r2_uploader.py:upload_screenshots() (~lines 99-126)
 ```
 
 **File Reference:**
-- Automated: `adws/adw_review.py:upload_and_map_screenshots()` lines 263-322
+- Automated: `adws/adw_review.py:upload_and_map_screenshots()` (~lines 263-322)
 - R2 Uploader: `adws/adw_modules/r2_uploader.py:R2Uploader` class
-- Upload method: `r2_uploader.py:upload_screenshots()` lines 99-126
+- Upload method: `r2_uploader.py:upload_screenshots()` (~lines 99-126)
 
 Store the updated review result with public URLs.
 
@@ -286,7 +286,7 @@ Store the updated review result with public URLs.
 Automatically format and post review results:
 
 ```bash
-# This mimics: adws/adw_review.py:format_review_comment() lines 324-408
+# This mimics: adws/adw_review.py:format_review_comment() (~lines 324-408)
 
 # Format review comment based on result
 if [ "$REVIEW_SUCCESS" = "true" ]; then
@@ -327,7 +327,7 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Review results posted" >> $LOG_FILE
 ```
 
 **File Reference:**
-- Automated: `adws/adw_review.py:format_review_comment()` lines 324-408
+- Automated: `adws/adw_review.py:format_review_comment()` (~lines 324-408)
 
 Display review summary to user with blocker count.
 
@@ -375,8 +375,8 @@ This will automatically:
 Continue to next blocker until all are processed.
 
 **File Reference:**
-- Automated: `adws/adw_review.py:resolve_review_issues()` lines 147-260
-- Patch creation: `adws/adw_modules/workflow_ops.py:create_and_implement_patch()` lines 587-654
+- Automated: `adws/adw_review.py:resolve_review_issues()` (~lines 147-260)
+- Patch creation: `adws/adw_modules/workflow_ops.py:create_and_implement_patch()` (~lines 587-654)
 - Executes: `.claude/commands/patch.md` and `.claude/commands/implement.md`
 
 Post resolution results:
@@ -414,7 +414,7 @@ This will automatically:
 8. Return the commit SHA
 
 **File Reference:**
-- Automated: `adws/adw_modules/workflow_ops.py:create_commit()` lines 238-272
+- Automated: `adws/adw_modules/workflow_ops.py` ANCHOR: create_commit
 - Executes: `.claude/commands/commit.md`
 
 Post commit completion:
@@ -438,13 +438,13 @@ Display: "✅ Review artifacts committed"
 Push changes:
 
 ```bash
-# This mimics: adws/adw_modules/git_ops.py:finalize_git_operations() line 110-123
+# This mimics: adws/adw_modules/git_ops.py ANCHOR: finalize_git_operations (push section)
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Pushing changes to remote" >> $LOG_FILE
 git push
 ```
 
 **File Reference:**
-- Automated: `adws/adw_modules/git_ops.py:finalize_git_operations()` lines 80-139
+- Automated: `adws/adw_modules/git_ops.py` ANCHOR: finalize_git_operations
 
 Display: "✅ Changes pushed to remote"
 
@@ -475,7 +475,7 @@ gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_ops: ✅ Review phase
 ```
 
 **File Reference:**
-- Automated: `adws/adw_review.py` lines 725-734
+- Automated: `adws/adw_review.py` (main() completion section ~lines 725-734)
 
 Display comprehensive summary to user:
 
@@ -637,8 +637,8 @@ The review includes an intelligent retry mechanism:
 4. Report final status
 
 **File Reference:**
-- Retry loop: `adws/adw_review.py` lines 514-661
-- Max attempts: `MAX_REVIEW_RETRY_ATTEMPTS = 3` (line 66)
+- Retry loop: `adws/adw_review.py` (review loop in main() ~lines 514-661)
+- Max attempts: `MAX_REVIEW_RETRY_ATTEMPTS = 3` (constant ~line 66)
 
 ## What to Do
 
