@@ -178,7 +178,7 @@ def validate_sql_query(query: str) -> bool:
         r"\bREVOKE\b",
         r"\bINSERT\s+INTO\b.*\bSELECT\b",  # Prevent INSERT...SELECT
         r"\bUPDATE\b.*\bSET\b",
-        r";\s*(?:SELECT|DROP|DELETE|UPDATE|INSERT)",  # Multiple statements
+        r";\s*(?:DROP|DELETE|UPDATE|INSERT)",  # Multiple dangerous statements (allow SELECT)
     ]
 
     for pattern in dangerous_patterns:

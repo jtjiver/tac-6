@@ -64,10 +64,17 @@ class HealthCheckResult(BaseModel):
 
 
 def check_env_vars() -> CheckResult:
-    """Check required environment variables."""
+    """Check required environment variables.
+
+    Note: ANTHROPIC_API_KEY is optional with Claude Code Pro subscription.
+    """
     required_vars = {
-        "ANTHROPIC_API_KEY": "Anthropic API Key for Claude Code",
         "CLAUDE_CODE_PATH": "Path to Claude Code CLI (defaults to 'claude')",
+    }
+
+    # Optional with Claude Code Pro subscription
+    optional_required_vars = {
+        "ANTHROPIC_API_KEY": "Anthropic API Key for Claude Code (Optional with Pro subscription)",
     }
 
     optional_vars = {
@@ -83,6 +90,7 @@ def check_env_vars() -> CheckResult:
 
     missing_required = []
     missing_optional = []
+    missing_optional_recommended = []
 
     # Check required vars
     for var, desc in required_vars.items():
@@ -91,6 +99,11 @@ def check_env_vars() -> CheckResult:
                 # This has a default, so not critical
                 continue
             missing_required.append(f"{var} ({desc})")
+
+    # Check optional but recommended vars (like ANTHROPIC_API_KEY)
+    for var, desc in optional_required_vars.items():
+        if not os.getenv(var):
+            missing_optional_recommended.append(f"{var} ({desc})")
 
     # Check optional vars
     for var, desc in optional_vars.items():

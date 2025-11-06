@@ -24,6 +24,8 @@ def prompt_llm(prompt_text):
     """
     load_dotenv()
 
+    # Note: This hook uses the Anthropic SDK directly (not Claude Code)
+    # so it still requires ANTHROPIC_API_KEY to be set
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         return None

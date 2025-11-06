@@ -104,8 +104,39 @@ async function setup() {
   // Step 2: Project Information
   print.step(2, 'Project Information');
 
-  const projectName = await question('Enter your project name: ');
-  const projectRepo = await question('Enter your GitHub repository URL (https://github.com/owner/repo): ');
+  // Get current directory name as default
+  const currentDirName = path.basename(process.cwd());
+  const defaultProjectName = currentDirName;
+
+  const projectNameInput = await question(`Enter your project name [${defaultProjectName}]: `);
+  const projectName = projectNameInput.trim() || defaultProjectName;
+
+  // Auto-detect GitHub username
+  let githubUsername = '';
+  try {
+    githubUsername = execSync('gh api user --jq .login', { encoding: 'utf8' }).trim();
+  } catch (error) {
+    // Fall back to git config if gh CLI fails
+    try {
+      const gitRemote = execSync('git config --get remote.origin.url', { encoding: 'utf8' }).trim();
+      const match = gitRemote.match(/github\.com[:/]([^/]+)/);
+      if (match) {
+        githubUsername = match[1];
+      }
+    } catch {}
+  }
+
+  // Generate default repo URL
+  const defaultRepoUrl = githubUsername
+    ? `https://github.com/${githubUsername}/${projectName}`
+    : '';
+
+  const projectRepoInput = await question(
+    defaultRepoUrl
+      ? `Enter your GitHub repository URL [${defaultRepoUrl}]: `
+      : 'Enter your GitHub repository URL (https://github.com/owner/repo): '
+  );
+  const projectRepo = projectRepoInput.trim() || defaultRepoUrl;
 
   const useWebhook = (await question('Will you use webhook automation? (y/N): ')).toLowerCase() === 'y';
 
@@ -176,9 +207,9 @@ async function setup() {
 PROJECT_NAME=${projectName}
 GITHUB_REPO_URL=${projectRepo}
 
-${mode !== 'interactive' ? `# Anthropic API (Required for Automated Mode)
+${mode !== 'interactive' ? `# Anthropic API (Optional with Claude Code Pro subscription)
 ANTHROPIC_API_KEY=${anthropicKey}
-` : '# Anthropic API (Not needed for Interactive Mode)\n# ANTHROPIC_API_KEY=sk-ant-...'}
+` : '# Anthropic API (Optional with Claude Code Pro subscription)\n# ANTHROPIC_API_KEY=sk-ant-...'}
 
 ${githubPat ? `# GitHub PAT (Optional - different account than gh CLI)
 GITHUB_PAT=${githubPat}
@@ -234,8 +265,95 @@ ADW_MODE=${mode}
     print.error('Failed to install dependencies: ' + error.message);
   }
 
+  // Step 7.5: Initialize Git and Create GitHub Repository
+  const nextStep = mode === 'interactive' ? 7 : 8;
+  print.step(nextStep, 'Initialize Git Repository');
+
+  const createGitHub = (await question('Create private GitHub repository and push? (Y/n): ')).toLowerCase() !== 'n';
+
+  if (createGitHub) {
+    try {
+      // Check if already a git repo
+      let isGitRepo = false;
+      try {
+        execSync('git rev-parse --git-dir', { stdio: 'ignore' });
+        isGitRepo = true;
+      } catch {}
+
+      if (!isGitRepo) {
+        console.log('Initializing git repository...');
+        execSync('git init', { stdio: 'inherit' });
+        print.success('Git repository initialized');
+      } else {
+        print.info('Already a git repository');
+      }
+
+      // Create .gitignore if it doesn't have critical entries
+      const gitignorePath = '.gitignore';
+      let gitignoreContent = fs.existsSync(gitignorePath)
+        ? fs.readFileSync(gitignorePath, 'utf8')
+        : '';
+
+      if (!gitignoreContent.includes('.env')) {
+        gitignoreContent += '\n# Environment variables\n.env\n.env.local\n';
+        fs.writeFileSync(gitignorePath, gitignoreContent);
+        print.success('Updated .gitignore');
+      }
+
+      // Add all files
+      console.log('Adding files to git...');
+      execSync('git add .', { stdio: 'inherit' });
+      print.success('Files staged');
+
+      // Create initial commit
+      console.log('Creating initial commit...');
+      execSync('git commit -m "Initial commit: ADW Framework setup\n\n🤖 Generated with ADW Framework Setup Wizard\n\nIncludes:\n- ADW System (core modules, workflows, triggers)\n- Claude Code Configuration (settings, hooks, commands)\n- Testing Infrastructure (Playwright MCP, E2E templates)\n- Documentation and guides"', { stdio: 'inherit' });
+      print.success('Initial commit created');
+
+      // Extract repo owner and name from URL
+      const repoMatch = projectRepo.match(/github\.com[:/]([^/]+)\/(.+?)(\.git)?$/);
+      if (repoMatch) {
+        const repoOwner = repoMatch[1];
+        const repoName = repoMatch[2];
+
+        // Create GitHub repository
+        console.log(`Creating private GitHub repository: ${repoOwner}/${repoName}...`);
+        try {
+          execSync(`gh repo create ${repoOwner}/${repoName} --private --source=. --remote=origin --push`, {
+            stdio: 'inherit'
+          });
+          print.success(`Repository created and pushed to ${projectRepo}`);
+        } catch (error) {
+          // If repo already exists, just add remote and push
+          print.warn('Repository might already exist, trying to add remote and push...');
+          try {
+            execSync(`git remote add origin ${projectRepo}`, { stdio: 'ignore' });
+          } catch {}
+          try {
+            execSync('git branch -M main', { stdio: 'inherit' });
+            execSync('git push -u origin main', { stdio: 'inherit' });
+            print.success('Pushed to existing repository');
+          } catch (pushError) {
+            print.error('Failed to push: ' + pushError.message);
+            print.info('You can manually push later with: git push -u origin main');
+          }
+        }
+      } else {
+        print.warn('Could not parse repository URL for GitHub creation');
+        print.info('You can manually create the repository and push later');
+      }
+
+    } catch (error) {
+      print.error('Failed to initialize git: ' + error.message);
+      print.info('You can manually initialize git and push later');
+    }
+  } else {
+    print.info('Skipping GitHub repository creation');
+    print.info('You can create it later with: gh repo create --private --source=. --remote=origin');
+  }
+
   // Step 8: Create Quick Start Guide
-  print.step(mode === 'interactive' ? 7 : 8, 'Creating Quick Start Guide');
+  print.step(mode === 'interactive' ? 8 : 9, 'Creating Quick Start Guide');
 
   const quickStartContent = `# Quick Start Guide - ${projectName}
 
@@ -327,8 +445,14 @@ ${useWebhook ? `3. **Start webhook server**:
 - Ensure you're in the project directory
 
 ### Automated mode API errors
+<<<<<<< HEAD
 - Verify API key in \`.env\`: \`ANTHROPIC_API_KEY\`
 - Check API key has not expired
+=======
+- With Claude Code Pro: No API key needed, uses authenticated session
+- Without Pro: Verify API key in \`.env\`: \`ANTHROPIC_API_KEY\`
+- Check API key has not expired (if using API key)
+>>>>>>> feature-issue-20-adw-61d49d73-social-media-footer
 - Review \`agents/<adw-id>/logs/\` for error details
 
 ### E2E tests failing
