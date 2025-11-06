@@ -38,3 +38,13 @@ This prompt helps you determine what documentation you should read based on the 
     - When adding new social media platforms to the footer
     - When troubleshooting footer display or responsive issues
     - When implementing similar external link sections
+
+- app_docs/feature-d5edb40a-table-exports.md
+  - Conditions:
+    - When implementing data export functionality
+    - When working with CSV generation or file downloads
+    - When adding download buttons to tables or query results
+    - When implementing streaming responses for large datasets
+    - When troubleshooting export functionality or button placement
+    - When adding new export formats or enhancing existing exports
+    - When working with /api/export endpoints
