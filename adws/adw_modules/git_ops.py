@@ -1,6 +1,7 @@
 """Git operations for ADW composable architecture.
 
 Provides centralized git operations that build on top of github.py module.
+All git operations use safe subprocess environment to prevent 1Password auth prompts.
 """
 
 import subprocess
@@ -10,13 +11,14 @@ from typing import Optional, Tuple
 
 # Import GitHub functions from existing module
 from adw_modules.github import get_repo_url, extract_repo_path, make_issue_comment
+from adw_modules.utils import get_safe_subprocess_env
 
 
 def get_current_branch() -> str:
     """Get current git branch name."""
     result = subprocess.run(
         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-        capture_output=True, text=True
+        capture_output=True, text=True, env=get_safe_subprocess_env()
     )
     return result.stdout.strip()
 
@@ -25,7 +27,7 @@ def push_branch(branch_name: str) -> Tuple[bool, Optional[str]]:
     """Push current branch to remote. Returns (success, error_message)."""
     result = subprocess.run(
         ["git", "push", "-u", "origin", branch_name],
-        capture_output=True, text=True
+        capture_output=True, text=True, env=get_safe_subprocess_env()
     )
     if result.returncode != 0:
         return False, result.stderr
@@ -40,10 +42,10 @@ def check_pr_exists(branch_name: str) -> Optional[str]:
         repo_path = extract_repo_path(repo_url)
     except Exception as e:
         return None
-    
+
     result = subprocess.run(
         ["gh", "pr", "list", "--repo", repo_path, "--head", branch_name, "--json", "url"],
-        capture_output=True, text=True
+        capture_output=True, text=True, env=get_safe_subprocess_env()
     )
     if result.returncode == 0:
         prs = json.loads(result.stdout)
@@ -55,10 +57,11 @@ def check_pr_exists(branch_name: str) -> Optional[str]:
 # ANCHOR: create_branch
 def create_branch(branch_name: str) -> Tuple[bool, Optional[str]]:
     """Create and checkout a new branch. Returns (success, error_message)."""
+    env = get_safe_subprocess_env()
     # Create branch
     result = subprocess.run(
         ["git", "checkout", "-b", branch_name],
-        capture_output=True, text=True
+        capture_output=True, text=True, env=env
     )
     if result.returncode != 0:
         # Check if error is because branch already exists
@@ -66,7 +69,7 @@ def create_branch(branch_name: str) -> Tuple[bool, Optional[str]]:
             # Try to checkout existing branch
             result = subprocess.run(
                 ["git", "checkout", branch_name],
-                capture_output=True, text=True
+                capture_output=True, text=True, env=env
             )
             if result.returncode != 0:
                 return False, result.stderr
@@ -78,20 +81,21 @@ def create_branch(branch_name: str) -> Tuple[bool, Optional[str]]:
 
 def commit_changes(message: str) -> Tuple[bool, Optional[str]]:
     """Stage all changes and commit. Returns (success, error_message)."""
+    env = get_safe_subprocess_env()
     # Check if there are changes to commit
-    result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+    result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, env=env)
     if not result.stdout.strip():
         return True, None  # No changes to commit
-    
+
     # Stage all changes
-    result = subprocess.run(["git", "add", "-A"], capture_output=True, text=True)
+    result = subprocess.run(["git", "add", "-A"], capture_output=True, text=True, env=env)
     if result.returncode != 0:
         return False, result.stderr
-    
+
     # Commit
     result = subprocess.run(
         ["git", "commit", "-m", message],
-        capture_output=True, text=True
+        capture_output=True, text=True, env=env
     )
     if result.returncode != 0:
         return False, result.stderr

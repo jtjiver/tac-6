@@ -205,6 +205,11 @@ def get_safe_subprocess_env() -> Dict[str, str]:
             "'commit.gpgsign=false'" if os.getenv("ADW_GIT_DISABLE_SIGNING", "true").lower() == "true" else ""
         ),
 
+        # SSH Agent Configuration
+        # Block SSH agent access to prevent 1Password prompts during git operations
+        # Only include SSH_AUTH_SOCK if signing is explicitly enabled
+        # (SSH agent not needed for HTTPS git operations or unsigned commits)
+
         # Essential system environment variables
         "HOME": os.getenv("HOME"),
         "USER": os.getenv("USER"),

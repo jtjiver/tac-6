@@ -242,9 +242,13 @@ Then restart ADW workflows.
 ## Files Modified
 
 1. ✅ `adws/adw_modules/utils.py` - Added `GIT_CONFIG_PARAMETERS` handling
-2. ✅ `.env.sample` - Documented `ADW_GIT_DISABLE_SIGNING` option
-3. ✅ `.env` - Added `ADW_GIT_DISABLE_SIGNING=true`
-4. ✅ `docs/AUTONOMOUS_AGENT_AUTH_SETUP.md` - This guide
+2. ✅ `adws/adw_modules/git_ops.py` - All git operations use safe subprocess env
+3. ✅ `adws/adw_build.py` - Git checkout uses safe subprocess env
+4. ✅ `adws/adw_document.py` - Git checkout uses safe subprocess env
+5. ✅ `adws/adw_modules/workflow_ops.py` - Git branch list uses safe subprocess env
+6. ✅ `.env.sample` - Documented `ADW_GIT_DISABLE_SIGNING` option
+7. ✅ `.env` - Added `ADW_GIT_DISABLE_SIGNING=true`
+8. ✅ `docs/AUTONOMOUS_AGENT_AUTH_SETUP.md` - This guide
 
 ## References
 
