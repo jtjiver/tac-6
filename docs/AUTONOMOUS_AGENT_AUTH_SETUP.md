@@ -1,5 +1,15 @@
 # Autonomous Agent Authentication Setup
 
+## ✅ RESOLVED: GPG Signing Disabled Globally
+
+**Status:** GPG signing has been disabled globally to allow autonomous agents to work.
+
+**Solution Applied:** `git config --global commit.gpgsign false`
+
+This document remains for historical reference and troubleshooting.
+
+---
+
 ## Problem: 1Password GPG Signing Blocks Automated Workflows
 
 When running autonomous ADW agents, git commit operations fail with:
