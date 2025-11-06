@@ -1,0 +1,18 @@
+product_id,product_name,category,price,stock_quantity,last_restocked
+1,Laptop Pro 15,Electronics,1299.99,45,2025-10-10
+3,Office Chair,Furniture,249.99,30,2025-10-20
+4,Standing Desk,Furniture,599.99,15,2025-11-01
+6,"Monitor 27""",Electronics,399.99,25,2025-11-10
+7,Desk Lamp,Furniture,79.99,60,2025-11-15
+8,Keyboard Mechanical,Electronics,129.99,55,2025-11-20
+9,Webcam HD,Electronics,79.99,40,2025-11-25
+12,Conference Speaker,Electronics,149.99,35,2025-12-10
+13,Bookshelf Modular,Furniture,199.99,20,2025-12-15
+14,Filing Cabinet,Furniture,179.99,25,2025-12-20
+18,Monitor Arm,Electronics,89.99,30,2026-01-10
+19,External SSD 1TB,Electronics,99.99,50,2026-01-15
+20,Noise Cancelling Headphones,Electronics,249.99,40,2026-01-20
+24,Executive Chair,Furniture,799.99,10,2026-02-10
+25,Laptop Backpack,Electronics,59.99,45,2026-02-15
+27,Document Scanner,Electronics,199.99,20,2026-02-25
+28,Whiteboard Magnetic,Furniture,89.99,35,2026-03-01
