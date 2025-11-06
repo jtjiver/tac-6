@@ -314,9 +314,10 @@ function displayResults(response: QueryResponse, query: string) {
     downloadButton.innerHTML = '<span style="font-size: 1rem;">📥</span> Export CSV';
     downloadButton.title = 'Export results as CSV';
 
-    // Insert download button before the toggle button
+    // Insert download button in the button container, before the toggle button
+    const buttonContainer = resultsHeader.querySelector('.results-header-buttons');
     const toggleButton = document.getElementById('toggle-results') as HTMLButtonElement;
-    toggleButton.parentElement?.insertBefore(downloadButton, toggleButton);
+    buttonContainer?.insertBefore(downloadButton, toggleButton);
   }
 
   // Store the SQL and columns data for export
