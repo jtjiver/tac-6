@@ -84,9 +84,13 @@ class R2Uploader:
             # Upload file
             self.client.upload_file(file_path, self.bucket_name, object_key)
             self.logger.info(f"Uploaded {file_path} to R2 as {object_key}")
-            
+
             # Generate public URL
-            public_url = f"https://{self.public_domain}/{object_key}"
+            # Handle domains with or without protocol
+            if self.public_domain.startswith(('http://', 'https://')):
+                public_url = f"{self.public_domain}/{object_key}"
+            else:
+                public_url = f"https://{self.public_domain}/{object_key}"
             return public_url
             
         except ClientError as e:
