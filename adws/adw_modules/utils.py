@@ -177,17 +177,17 @@ def get_safe_subprocess_env() -> Dict[str, str]:
     safe_env_vars = {
         # Anthropic Configuration (optional with Claude Code Pro subscription)
         "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
-        
+
         # GitHub Configuration (optional)
         # GITHUB_PAT is optional - if not set, will use default gh auth
         "GITHUB_PAT": os.getenv("GITHUB_PAT"),
-        
+
         # Claude Code Configuration
         "CLAUDE_CODE_PATH": os.getenv("CLAUDE_CODE_PATH", "claude"),
         "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": os.getenv(
             "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "true"
         ),
-        
+
         # Agent Cloud Sandbox Environment (optional)
         "E2B_API_KEY": os.getenv("E2B_API_KEY"),
 
@@ -196,7 +196,15 @@ def get_safe_subprocess_env() -> Dict[str, str]:
 
         # Cloudflare tunnel token (optional)
         "CLOUDFLARED_TUNNEL_TOKEN": os.getenv("CLOUDFLARED_TUNNEL_TOKEN"),
-        
+
+        # Git Configuration for Automated Workflows
+        # Disable GPG signing for autonomous agents to avoid 1Password authentication prompts
+        # User can override by setting ADW_GIT_DISABLE_SIGNING=false in .env
+        "GIT_CONFIG_PARAMETERS": os.getenv(
+            "ADW_GIT_CONFIG_PARAMETERS",
+            "'commit.gpgsign=false'" if os.getenv("ADW_GIT_DISABLE_SIGNING", "true").lower() == "true" else ""
+        ),
+
         # Essential system environment variables
         "HOME": os.getenv("HOME"),
         "USER": os.getenv("USER"),
@@ -205,11 +213,11 @@ def get_safe_subprocess_env() -> Dict[str, str]:
         "TERM": os.getenv("TERM"),
         "LANG": os.getenv("LANG"),
         "LC_ALL": os.getenv("LC_ALL"),
-        
+
         # Python-specific variables that subprocesses might need
         "PYTHONPATH": os.getenv("PYTHONPATH"),
         "PYTHONUNBUFFERED": "1",  # Useful for subprocess output
-        
+
         # Working directory tracking
         "PWD": os.getcwd(),
     }

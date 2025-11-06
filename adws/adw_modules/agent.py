@@ -1,12 +1,14 @@
 """Claude Code agent module for executing prompts programmatically.
 
-⚠️  API CREDIT PROTECTION ENABLED ⚠️
+💡 Claude Code Pro Integration
 
-This module has been modified to BLOCK execution that would consume API credits.
-If you want to use API-based automation, you must explicitly enable it.
+This module uses Claude Code CLI which can work with either:
+1. Claude Code Pro subscription (recommended) - uses your Pro credits
+2. API key (ANTHROPIC_API_KEY) - uses API credits and costs money
 
-To enable API usage (COSTS MONEY):
-    Set environment variable: export ADW_ALLOW_API_USAGE=true
+By default, API usage is ALLOWED to support Claude Code Pro users.
+If you don't have Claude Code Pro and want protection against API charges,
+set: export ADW_ALLOW_API_USAGE=false
 """
 
 import subprocess
@@ -29,11 +31,11 @@ from .data_types import (
 load_dotenv()
 
 # ============================================================================
-# API CREDIT PROTECTION
+# CLAUDE CODE PRO INTEGRATION
 # ============================================================================
-# By default, BLOCK any execution that might use API credits
-# Set ADW_ALLOW_API_USAGE=true to enable API usage (costs money!)
-API_USAGE_ALLOWED = os.getenv("ADW_ALLOW_API_USAGE", "false").lower() == "true"
+# By default, ALLOW Claude Code execution (supports Pro subscription)
+# Set ADW_ALLOW_API_USAGE=false only if you want to block API usage
+API_USAGE_ALLOWED = os.getenv("ADW_ALLOW_API_USAGE", "true").lower() == "true"
 
 # Get Claude Code CLI path from environment
 CLAUDE_PATH = os.getenv("CLAUDE_CODE_PATH", "claude")
@@ -192,34 +194,23 @@ def prompt_claude_code(request: AgentPromptRequest) -> AgentPromptResponse:
     """Execute Claude Code with the given prompt configuration."""
 
     # ========================================================================
-    # API CREDIT PROTECTION CHECK
+    # CLAUDE CODE PRO / API USAGE CHECK
     # ========================================================================
     if not API_USAGE_ALLOWED:
         warning = """
 ╔═══════════════════════════════════════════════════════════════════════════╗
 ║                                                                           ║
-║                    ⚠️  API CREDIT PROTECTION ACTIVE ⚠️                     ║
+║                    ⚠️  CLAUDE CODE EXECUTION BLOCKED ⚠️                    ║
 ║                                                                           ║
-║  This execution has been BLOCKED to protect your API credits!            ║
+║  You have disabled Claude Code execution via ADW_ALLOW_API_USAGE=false   ║
 ║                                                                           ║
-║  The automated ADW scripts use `claude` CLI commands which may           ║
-║  consume API credits depending on your Claude Code configuration.        ║
-║                                                                           ║
-║  RECOMMENDED: Use the orchestrator instead (no API credits):             ║
-║    ./adws/orchestrate.sh <adw_id>                                        ║
-║                                                                           ║
-║  Or for full automation via hooks:                                       ║
-║    claude /adw_guide_plan                                                ║
-║    (Hook automatically chains remaining phases)                          ║
-║                                                                           ║
-║  ─────────────────────────────────────────────────────────────────────   ║
-║                                                                           ║
-║  If you REALLY want to use API-based automation (COSTS MONEY):           ║
+║  To enable automated workflows:                                          ║
 ║                                                                           ║
 ║    export ADW_ALLOW_API_USAGE=true                                       ║
-║    python adws/adw_plan.py <issue_number>                                ║
 ║                                                                           ║
-║  Note: Setting ADW_ALLOW_API_USAGE=true will consume your API credits!  ║
+║  Note: If you have Claude Code Pro, this uses your Pro subscription      ║
+║  credits (not API credits). If you don't have Pro, this will use API     ║
+║  credits from ANTHROPIC_API_KEY and will cost money.                     ║
 ║                                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 
@@ -228,10 +219,6 @@ Command that was blocked:
   Model: {model}
   ADW ID: {adw_id}
   Agent: {agent_name}
-
-To use this command without API credits:
-  1. Use orchestrator: ./adws/orchestrate.sh {adw_id}
-  2. Or run manually: claude "{prompt}"
 """.format(
             prompt=request.prompt[:100] + ("..." if len(request.prompt) > 100 else ""),
             model=request.model,
@@ -241,7 +228,7 @@ To use this command without API credits:
 
         print(warning, file=sys.stderr)
         return AgentPromptResponse(
-            output="BLOCKED: API credit protection active. See stderr for details.",
+            output="BLOCKED: Claude Code execution disabled. Set ADW_ALLOW_API_USAGE=true to enable.",
             success=False,
             session_id=None
         )
