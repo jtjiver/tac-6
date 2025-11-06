@@ -1,0 +1,35 @@
+graph TB
+    subgraph "Client Browser"
+        HTML[HTML Page<br/>index.html]
+        CSS[Stylesheet<br/>style.css]
+        Footer[Footer Component<br/>NEW]
+    end
+
+    subgraph "Application Components"
+        Header[Header Section]
+        Main[Main Content<br/>Query Interface]
+        Footer
+    end
+
+    subgraph "External Links"
+        Twitter[Twitter]
+        GitHub[GitHub]
+        LinkedIn[LinkedIn]
+        Facebook[Facebook]
+        Instagram[Instagram]
+    end
+
+    HTML --> Header
+    HTML --> Main
+    HTML --> Footer
+    CSS --> Footer
+
+    Footer --> Twitter
+    Footer --> GitHub
+    Footer --> LinkedIn
+    Footer --> Facebook
+    Footer --> Instagram
+
+    style Footer fill:#667eea,stroke:#764ba2,stroke-width:3px,color:#fff
+    style CSS fill:#f9f9f9,stroke:#333
+    style HTML fill:#f9f9f9,stroke:#333

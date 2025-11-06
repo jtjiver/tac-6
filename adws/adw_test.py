@@ -67,11 +67,19 @@ MAX_E2E_TEST_RETRY_ATTEMPTS = 2  # E2E ui tests
 
 
 def check_env_vars(logger: Optional[logging.Logger] = None) -> None:
-    """Check that all required environment variables are set."""
+    """Check that all required environment variables are set.
+
+    Note: ANTHROPIC_API_KEY is optional with Claude Code Pro subscription.
+    Claude Code will use your authenticated session if the key is not set.
+    """
     required_vars = [
-        "ANTHROPIC_API_KEY",
         "CLAUDE_CODE_PATH",
     ]
+
+    optional_vars = [
+        "ANTHROPIC_API_KEY",  # Optional with Claude Code Pro subscription
+    ]
+
     missing_vars = [var for var in required_vars if not os.getenv(var)]
 
     if missing_vars:

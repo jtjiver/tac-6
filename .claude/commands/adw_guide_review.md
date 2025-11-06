@@ -74,19 +74,77 @@ Task tool spawns: "Create review commit"
 
 **IMPORTANT:** This guide uses intelligent sub-agent delegation to automate the entire review phase. Just provide an ADW ID and the guide orchestrates everything automatically.
 
-**CRITICAL EXECUTION RULES:**
+**CRITICAL EXECUTION RULES - MUST FOLLOW EXACTLY:**
+
+⚠️ **AUTO-CONTINUATION IS MANDATORY** ⚠️
+
 1. **Never stop until all 9 steps are complete** - Check your TodoWrite list after EVERY step
 2. **Mark each step complete immediately** after finishing it using TodoWrite
 3. **Automatically proceed to the next pending step** without waiting for user input
 4. **Only ask the user questions** at Step 1 (ADW ID) - everything else runs automatically
-5. **After ANY SlashCommand or tool execution completes**, immediately:
-   - Update your TodoWrite list (mark current step complete, next step in_progress)
-   - Continue to the next pending step WITHOUT waiting for user input
-   - Check your TodoWrite list to see what's next
-   - DO NOT stop or pause - keep executing until all steps are complete
+
+5. **CRITICAL AUTO-CONTINUE SEQUENCE** - After ANY step completes:
+   ```
+   a. Mark current step as "completed" in TodoWrite
+   b. Mark next step as "in_progress" in TodoWrite
+   c. IMMEDIATELY begin executing the next step
+   d. DO NOT pause, DO NOT wait, DO NOT ask "have you finished?"
+   e. DO NOT display messages like "should I continue?" or "ready to proceed?"
+   f. JUST CONTINUE AUTOMATICALLY
+   ```
+
 6. **Display final summary only** when Step 9 is marked "completed" in your TodoWrite list
 
+7. **Step 6 special case (Resolve Blocker Issues):**
+   - If NO blockers: Mark Step 6 complete immediately, proceed to Step 7
+   - If blockers exist: For EACH blocker, run /patch → WAIT → run /implement → WAIT → continue to next blocker
+   - After ALL blockers resolved: Mark Step 6 complete, proceed to Step 7
+   - DO NOT wait for user input between blockers or between /patch and /implement
+
+8. **Recognition of completion signals:**
+   - When /review returns JSON: Step 3 is DONE → auto-continue to Step 4
+   - When screenshots uploaded: Step 4 is DONE → auto-continue to Step 5
+   - When review posted to GitHub: Step 5 is DONE → auto-continue to Step 6
+   - When blockers resolved: Step 6 is DONE → auto-continue to Step 7
+   - When /commit completes: Step 7 is DONE → auto-continue to Step 8
+   - When git push completes: Step 8 is DONE → auto-continue to Step 9
+   - When state updated and summary displayed: Step 9 is DONE → STOP
+
+9. **FORBIDDEN BEHAVIORS:**
+   - ❌ Stopping after Step 3 and asking "have you finished?"
+   - ❌ Pausing between steps for confirmation
+   - ❌ Waiting for user input between Steps 2-9
+   - ❌ Displaying intermediate "workflow complete" messages before Step 9
+   - ❌ Asking "should I continue to the next step?"
+
 **Why this matters:** The automated system (`adws/adw_review.py`) runs all steps sequentially without pausing. This interactive guide must match that behavior to provide the same experience. The slash commands now include auto-continuation instructions, so you MUST honor them and keep working.
+
+**HOW TO TRACK PROGRESS:**
+- After EVERY action (Task, SlashCommand, Bash, etc.), check your TodoWrite list
+- Use TodoWrite to mark the current step as "completed" and the next step as "in_progress"
+- Ask yourself: "What's the next pending task in my TodoWrite list?"
+- If answer is NOT "Complete Review Phase", keep working automatically
+- Only stop when Step 9 "Complete Review Phase" is marked "completed"
+
+**SELF-CHECK AFTER EVERY STEP:**
+```
+Did I just complete a step? YES
+↓
+Update TodoWrite: mark current complete, mark next in_progress
+↓
+Is the next step "Complete Review Phase" AND marked "completed"?
+├─ NO  → IMMEDIATELY start executing the next in_progress step
+└─ YES → Display final summary and STOP
+```
+
+**EXAMPLE - What Should Happen After Step 3:**
+```
+❌ WRONG:
+Step 3: /review completes → Display JSON → Ask "have you finished?" → STOP
+
+✅ CORRECT:
+Step 3: /review completes → Display JSON → Mark Step 3 complete → Mark Step 4 in_progress → IMMEDIATELY execute Step 4 (upload screenshots) → Continue through all remaining steps → ONLY stop after Step 9 complete
+```
 
 ### Step 1: Load State and Initialize (Automated with Sub-Agent)
 
@@ -226,7 +284,15 @@ This will automatically:
 
 Store the review result JSON.
 
-**IMPORTANT:** Mark Step 3 as completed in TodoWrite and immediately proceed to Step 4. DO NOT wait for user input.
+**CRITICAL - AUTO-CONTINUE:**
+After /review completes and returns the JSON result:
+1. IMMEDIATELY mark Step 3 as completed in TodoWrite
+2. IMMEDIATELY mark Step 4 as in_progress in TodoWrite
+3. IMMEDIATELY proceed to Step 4 WITHOUT any user input
+4. DO NOT display "have you finished?" messages
+5. DO NOT wait or pause - the workflow MUST continue automatically
+
+This is NON-NEGOTIABLE - you MUST auto-continue to Step 4.
 
 ### Step 4: Upload Screenshots to R2 (Automated with Sub-Agent)
 
@@ -339,40 +405,53 @@ Display review summary to user with blocker count.
 - Implements patch plans automatically
 - Mimics `adws/adw_review.py:resolve_review_issues()`
 
-If blockers are found, automatically resolve them using SlashCommand:
+**CRITICAL:** If NO blockers were found (review success = true), SKIP this step entirely and immediately mark Step 6 as completed, then proceed to Step 7.
 
-For each blocker issue:
+**CRITICAL:** If blockers were found, you MUST resolve them using this exact sequence:
 
+For each blocker issue (process ONE at a time, sequentially):
+
+**Step 6a: Create Patch Plan**
 ```bash
-# Post status
-gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_review_patch_planner_{iteration}_{issue_num}: 📝 Creating patch plan"
+# Post status for this blocker
+gh issue comment {issue_number} --body "[ADW-BOT] {adw_id}_review_patch_planner_1_{issue_num}: 📝 Creating patch plan for blocker {issue_num}"
 
-# Use SlashCommand to create patch plan and artifacts
-/patch {adw_id} review_patch_planner_{iteration}_{issue_num} '{review_change_request}' {spec_file} '{screenshots}'
+# Use SlashCommand to create patch plan
+/patch {adw_id} review_patch_planner_1_{issue_num} '{review_change_request}' {spec_file} '{screenshots}'
 ```
 
-This will automatically:
-1. Create: `agents/{adw_id}/review_patch_planner_{iteration}_{issue_num}/prompts/patch.txt`
-2. Create: `agents/{adw_id}/review_patch_planner_{iteration}_{issue_num}/raw_output.jsonl`
-3. Create: `agents/{adw_id}/review_patch_planner_{iteration}_{issue_num}/raw_output.json`
-4. Analyze blocker issue and create patch plan
-5. Return patch plan file path
-
-Then implement the patch:
+**Step 6b: Wait for /patch to complete, then immediately implement**
+After /patch returns the patch plan file path, IMMEDIATELY (without user input) run:
 
 ```bash
-# Use SlashCommand to implement patch and create artifacts
-/implement {patch_plan_file} {adw_id} review_patch_implementor_{iteration}_{issue_num}
+# Use SlashCommand to implement the patch
+/implement {patch_plan_file} {adw_id} review_patch_implementor_1_{issue_num}
 ```
 
-This will automatically:
-1. Create: `agents/{adw_id}/review_patch_implementor_{iteration}_{issue_num}/prompts/implement.txt`
-2. Create: `agents/{adw_id}/review_patch_implementor_{iteration}_{issue_num}/raw_output.jsonl`
-3. Create: `agents/{adw_id}/review_patch_implementor_{iteration}_{issue_num}/raw_output.json`
-4. Implement the patch plan
-5. Post result to GitHub
+**Step 6c: Wait for /implement to complete, then continue to next blocker**
+After /implement finishes, IMMEDIATELY (without user input):
+- If more blockers exist, go to Step 6a for the next blocker
+- If all blockers processed, post resolution summary and proceed to Step 7
 
-Continue to next blocker until all are processed.
+**EXECUTION PATTERN:**
+```
+Blocker 1: /patch → wait → /implement → wait → continue
+Blocker 2: /patch → wait → /implement → wait → continue
+Blocker 3: /patch → wait → /implement → wait → continue
+All done → post summary → mark Step 6 complete → proceed to Step 7
+```
+
+**DO NOT:**
+- ❌ Run all /patch commands first then all /implement commands
+- ❌ Wait for user input between /patch and /implement
+- ❌ Stop after resolving one blocker if more exist
+- ❌ Skip implementing a patch plan after creating it
+
+**DO:**
+- ✅ Process blockers sequentially (one complete cycle at a time)
+- ✅ Auto-continue from /patch to /implement without user input
+- ✅ Auto-continue from one blocker to the next without user input
+- ✅ Track progress in TodoWrite for each blocker
 
 **File Reference:**
 - Automated: `adws/adw_review.py:resolve_review_issues()` (~lines 147-260)
@@ -388,7 +467,14 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Blocker resolution completed" >> $LOG_FIL
 
 Display: "✅ Resolved {resolved_count} blocker issues"
 
-**IMPORTANT:** Mark Step 6 as completed in TodoWrite and immediately proceed to Step 7. DO NOT wait for user input.
+**CRITICAL - AUTO-CONTINUE:**
+After all blockers are resolved (or if no blockers existed):
+1. IMMEDIATELY mark Step 6 as completed in TodoWrite
+2. IMMEDIATELY mark Step 7 as in_progress in TodoWrite
+3. IMMEDIATELY proceed to Step 7 WITHOUT any user input
+4. DO NOT wait or pause - the workflow MUST continue automatically
+
+This is NON-NEGOTIABLE - you MUST auto-continue to Step 7.
 
 ### Step 7: Create Review Commit (Automated with Sub-Agent)
 
@@ -426,7 +512,14 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Review commit created" >> $LOG_FILE
 
 Display: "✅ Review artifacts committed"
 
-**IMPORTANT:** Mark Step 7 as completed in TodoWrite and immediately proceed to Step 8. DO NOT wait for user input.
+**CRITICAL - AUTO-CONTINUE:**
+After /commit completes:
+1. IMMEDIATELY mark Step 7 as completed in TodoWrite
+2. IMMEDIATELY mark Step 8 as in_progress in TodoWrite
+3. IMMEDIATELY proceed to Step 8 WITHOUT any user input
+4. DO NOT wait or pause - the workflow MUST continue automatically
+
+This is NON-NEGOTIABLE - you MUST auto-continue to Step 8.
 
 ### Step 8: Push and Update PR (Automated)
 
@@ -448,7 +541,14 @@ git push
 
 Display: "✅ Changes pushed to remote"
 
-**IMPORTANT:** Mark Step 8 as completed in TodoWrite and immediately proceed to Step 9. DO NOT wait for user input.
+**CRITICAL - AUTO-CONTINUE:**
+After git push completes:
+1. IMMEDIATELY mark Step 8 as completed in TodoWrite
+2. IMMEDIATELY mark Step 9 as in_progress in TodoWrite
+3. IMMEDIATELY proceed to Step 9 WITHOUT any user input
+4. DO NOT wait or pause - the workflow MUST continue automatically
+
+This is NON-NEGOTIABLE - you MUST auto-continue to Step 9.
 
 ### Step 9: Complete Review Phase (Automated)
 
@@ -681,3 +781,37 @@ This intelligent guide with sub-agent delegation gives you:
 ✨ **Cloud-hosted screenshots for professional GitHub reports**
 
 All in one Claude Code session! 🚀
+
+## Quick Reference: When to Stop vs Continue
+
+**❌ DO NOT STOP if:**
+- You just completed Step 1-8 (still have more steps)
+- You just ran a Task tool (continue to next step)
+- You just ran a SlashCommand like /review, /patch, /implement (continue to next action)
+- You're in the middle of Step 6 and have more blockers to resolve
+- Your TodoWrite list shows ANY pending tasks
+
+**✅ ONLY STOP when:**
+- Step 9 "Complete Review Phase" is marked as "completed" in TodoWrite
+- You've displayed the final comprehensive summary to the user
+- ALL 9 steps show "completed" status in your TodoWrite list
+
+**🔄 The Workflow Loop:**
+```
+1. Execute current step/action
+2. Update TodoWrite (mark current complete, next in_progress)
+3. Check: Is Step 9 complete?
+   ├─ NO  → Continue to next pending task (go to step 1)
+   └─ YES → Display final summary and STOP
+```
+
+**Special Case - Step 6 (Blocker Resolution):**
+```
+For each blocker:
+  1. Run /patch → get patch_plan_file
+  2. IMMEDIATELY run /implement with patch_plan_file
+  3. Wait for /implement to finish
+  4. Check: More blockers?
+     ├─ YES → Continue to next blocker (go to step 1)
+     └─ NO  → Mark Step 6 complete, proceed to Step 7
+```

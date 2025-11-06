@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant User
+    participant Browser
+    participant HTML as index.html
+    participant CSS as style.css
+    participant SocialSite as Social Media Site
+
+    User->>Browser: Navigate to application
+    Browser->>HTML: Load page
+    HTML->>CSS: Apply footer styles
+    CSS-->>HTML: Render footer with gradient
+    HTML-->>Browser: Display page with footer
+    Browser-->>User: Show complete page
+
+    User->>Browser: Hover over social link
+    Browser->>CSS: Apply :hover styles
+    CSS-->>Browser: Transform + shadow effect
+    Browser-->>User: Visual feedback
+
+    User->>Browser: Click social media link
+    Browser->>Browser: Open new tab (target="_blank")
+    Browser->>SocialSite: Navigate to social media URL
+    SocialSite-->>Browser: Load social media page
+    Browser-->>User: Display social media site

@@ -31,6 +31,45 @@ documentation_screenshots_dir: $3 if provided, otherwise leave it blank
 - Use visual context to better describe UI changes or visual features
 - Reference screenshots in documentation using relative paths (e.g., `assets/screenshot-name.png`)
 
+### 3.5. Generate Enhanced Documentation Artifacts
+- Create `app_docs/assets/diagrams/{adw_id}/` directory if it doesn't exist
+- Generate a single consolidated diagrams file: `app_docs/assets/diagrams/{adw_id}/diagrams.md`
+- This file should contain all diagrams in clearly separated sections using H2 headers (`##`)
+- Each diagram section must be independently extractable for programmatic reuse
+- Generate the following diagram sections:
+
+  **## Context Diagram**
+  - Show system components and their relationships
+  - Include client/server boundaries
+  - Highlight new/modified components from this feature
+  - Format as Mermaid code block (```mermaid ... ```)
+
+  **## Sequence Diagram**
+  - Document key feature operation flows
+  - Show user → client → server → database interactions
+  - Include API endpoints and data flow
+  - Format as Mermaid code block (```mermaid ... ```)
+
+  **## Database Schema** (if applicable)
+  - Show entity relationships
+  - Include new/modified tables or collections
+  - Document key fields and relationships
+  - Format as Mermaid ER diagram code block (```mermaid ... ```)
+  - Skip this section entirely if no database changes detected
+
+  **## Filesystem Structure**
+  - Generate tree output showing:
+    - `app/client/` structure with key modified files highlighted
+    - `app/server/` structure with key modified files highlighted
+  - Include 2-3 levels of depth, focusing on changed areas
+  - Format as code block with *** markers for modified files
+  - Add "Key Changes" summary below the tree
+
+  **## Component Breakdown** (optional)
+  - Visual breakdown of HTML/component structure if applicable
+  - CSS class hierarchy if applicable
+  - Format as code block or simple text hierarchy
+
 ### 4. Generate Documentation
 - Create a new documentation file in `app_docs/` directory
 - Filename format: `feature-{adw_id}-{descriptive-name}.md`
@@ -69,6 +108,36 @@ documentation_screenshots_dir: $3 if provided, otherwise leave it blank
 <If documentation_screenshots_dir was provided and screenshots were copied>
 
 ![<Description>](assets/<screenshot-filename.png>)
+
+## Architecture & Diagrams
+
+**NOTE:** All diagrams are also available in a single file at `assets/diagrams/{adw_id}/diagrams.md` for easy programmatic extraction and reuse.
+
+### Context Diagram
+
+```mermaid
+<Include context diagram section from assets/diagrams/{adw_id}/diagrams.md>
+```
+
+### Sequence Diagram
+
+```mermaid
+<Include sequence diagram section from assets/diagrams/{adw_id}/diagrams.md>
+```
+
+### Database Schema
+
+<If database schema section exists in diagrams.md, include it here>
+
+```mermaid
+<Include database schema section from assets/diagrams/{adw_id}/diagrams.md>
+```
+
+### Filesystem Structure
+
+```
+<Include filesystem structure section from assets/diagrams/{adw_id}/diagrams.md>
+```
 
 ## What Was Built
 

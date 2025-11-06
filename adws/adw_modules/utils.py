@@ -164,16 +164,18 @@ def parse_json(text: str, target_type: Type[T] = None) -> Union[T, Any]:
 
 def get_safe_subprocess_env() -> Dict[str, str]:
     """Get filtered environment variables safe for subprocess execution.
-    
+
     Returns only the environment variables needed for ADW workflows based on
     .env.sample configuration. This prevents accidental exposure of sensitive
     credentials to subprocesses.
-    
+
+    Note: ANTHROPIC_API_KEY is optional with Claude Code Pro subscription.
+
     Returns:
         Dictionary containing only required environment variables
     """
     safe_env_vars = {
-        # Anthropic Configuration (required)
+        # Anthropic Configuration (optional with Claude Code Pro subscription)
         "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
         
         # GitHub Configuration (optional)

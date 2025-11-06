@@ -32,6 +32,8 @@ from dotenv import load_dotenv
 from e2b_code_interpreter import Sandbox
 
 load_dotenv()
+# Note: ANTHROPIC_API_KEY is optional with Claude Code Pro subscription
+# Claude Code will use authenticated session if key is not provided
 api_key = os.getenv("ANTHROPIC_API_KEY", "")
 
 print("=== E2B + Claude Code Integration POC ===\n")

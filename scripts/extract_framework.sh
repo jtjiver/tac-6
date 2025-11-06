@@ -11,8 +11,18 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Default target directory
-TARGET_DIR="${1:-adw-framework-starter}"
+# Find the project root (where this script is located)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+
+# Default target directory - use /tmp if not specified
+if [ -n "$1" ]; then
+    # If argument provided, create in /tmp
+    TARGET_DIR="/tmp/$1"
+else
+    # If no argument, use default name in /tmp
+    TARGET_DIR="/tmp/adw-framework-starter"
+fi
 
 echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   ADW Framework Extraction Tool               ║${NC}"
@@ -72,57 +82,39 @@ copy_directory() {
 
 echo ""
 echo -e "${BLUE}📦 Extracting ADW System...${NC}"
+echo -e "${BLUE}Source: $PROJECT_ROOT${NC}"
+echo ""
 
-# ADW Core Modules
-copy_directory "adws/adw_modules" "$TARGET_DIR/adws/adw_modules" "ADW core modules" "__pycache__"
+# Change to project root for all copy operations
+cd "$PROJECT_ROOT"
 
-# ADW Workflow Scripts
-for script in adw_plan.py adw_build.py adw_test.py adw_review.py adw_document.py adw_patch.py \
-              adw_plan_build.py adw_plan_build_test.py adw_plan_build_test_review.py \
-              adw_plan_build_review.py adw_plan_build_document.py adw_sdlc.py; do
-    copy_with_progress "adws/$script" "$TARGET_DIR/adws/$script" "Workflow: $script"
-done
-
-# ADW Triggers
-copy_directory "adws/adw_triggers" "$TARGET_DIR/adws/adw_triggers" "Automation triggers" "__pycache__"
-
-# ADW README
-copy_with_progress "adws/README.md" "$TARGET_DIR/adws/README.md" "ADW documentation"
-
-# Create __init__.py files
-touch "$TARGET_DIR/adws/__init__.py"
-touch "$TARGET_DIR/adws/adw_modules/__init__.py"
-touch "$TARGET_DIR/adws/adw_triggers/__init__.py"
+# Copy entire adws directory (excluding .venv and __pycache__)
+if [ -d "adws" ]; then
+    echo -e "${GREEN}  ✓${NC} Copying entire adws directory..."
+    mkdir -p "$TARGET_DIR/adws"
+    rsync -av --exclude='.venv' --exclude='__pycache__' --exclude='*.pyc' "adws/" "$TARGET_DIR/adws/" > /dev/null 2>&1
+    echo -e "${GREEN}  ✓${NC} ADW System copied (modules, workflows, triggers)"
+else
+    echo -e "${YELLOW}  ⚠${NC} adws directory not found"
+fi
 
 echo ""
 echo -e "${BLUE}⚙️  Extracting Claude Code Configuration...${NC}"
 
-# Claude settings
-copy_with_progress ".claude/settings.json" "$TARGET_DIR/.claude/settings.json" "Claude Code settings"
+# Copy entire .claude directory (excluding .DS_Store and __pycache__)
+if [ -d ".claude" ]; then
+    echo -e "${GREEN}  ✓${NC} Copying entire .claude directory..."
+    mkdir -p "$TARGET_DIR/.claude"
+    rsync -av --exclude='.DS_Store' --exclude='__pycache__' --exclude='*.pyc' ".claude/" "$TARGET_DIR/.claude/" > /dev/null 2>&1
+    echo -e "${GREEN}  ✓${NC} Claude Code configuration copied (settings, hooks, commands)"
+    echo -e "${GREEN}  ✓${NC} Including settings.local.json (CRITICAL for slash commands)"
+else
+    echo -e "${YELLOW}  ⚠${NC} .claude directory not found"
+fi
 
-# Claude hooks
-copy_directory ".claude/hooks" "$TARGET_DIR/.claude/hooks" "Claude Code hooks" "__pycache__"
-
-# Claude slash commands (generic ones)
-echo -e "${GREEN}  ✓${NC} Copying slash commands..."
-mkdir -p "$TARGET_DIR/.claude/commands"
-
-# Core workflow commands
-for cmd in classify_issue.md classify_adw.md feature.md bug.md chore.md \
-           implement.md patch.md test.md test_e2e.md resolve_failed_test.md \
-           resolve_failed_e2e_test.md review.md document.md generate_branch_name.md \
-           commit.md pull_request.md tools.md conditional_docs.md prepare_app.md; do
-    copy_with_progress ".claude/commands/$cmd" "$TARGET_DIR/.claude/commands/$cmd" "  - $cmd"
-done
-
-# Interactive guides
-for guide in adw_guide_plan.md adw_guide_build.md adw_guide_test.md \
-             adw_guide_pr.md adw_guide_review.md adw_guide_status.md; do
-    copy_with_progress ".claude/commands/$guide" "$TARGET_DIR/.claude/commands/$guide" "  - $guide"
-done
-
-# Create e2e directory with README
+# Create e2e directory with README if it doesn't exist
 mkdir -p "$TARGET_DIR/.claude/commands/e2e"
+if [ ! -f "$TARGET_DIR/.claude/commands/e2e/README.md" ]; then
 cat > "$TARGET_DIR/.claude/commands/e2e/README.md" << 'EOF'
 # E2E Test Templates
 
@@ -178,7 +170,16 @@ claude -p "/test_e2e test_name"
 claude -p "/test_e2e all"
 ```
 EOF
-echo -e "${GREEN}  ✓${NC} E2E test template directory created"
+fi
+
+# Update settings.local.json paths to use new project directory
+if [ -f "$TARGET_DIR/.claude/settings.local.json" ]; then
+    echo -e "${GREEN}  ✓${NC} Updating settings.local.json with new project path..."
+    # Replace old path with new target directory path
+    sed -i.bak "s|/opt/asw/projects/personal/tac/tac-6|$TARGET_DIR|g" "$TARGET_DIR/.claude/settings.local.json"
+    rm -f "$TARGET_DIR/.claude/settings.local.json.bak"
+    echo -e "${GREEN}  ✓${NC} Updated Read permissions to use new path"
+fi
 
 echo ""
 echo -e "${BLUE}📚 Extracting Documentation...${NC}"
@@ -225,17 +226,25 @@ copy_with_progress ".gitignore" "$TARGET_DIR/.gitignore" "Git ignore patterns"
 echo ""
 echo -e "${BLUE}🔧 Extracting Utility Scripts...${NC}"
 
-# Generic scripts
-mkdir -p "$TARGET_DIR/scripts"
-copy_with_progress "scripts/start.sh" "$TARGET_DIR/scripts/start.sh" "Multi-service startup script"
-copy_with_progress "scripts/stop_apps.sh" "$TARGET_DIR/scripts/stop_apps.sh" "Service shutdown script"
+# Copy entire scripts directory
+if [ -d "scripts" ]; then
+    echo -e "${GREEN}  ✓${NC} Copying entire scripts directory..."
+    mkdir -p "$TARGET_DIR/scripts"
+    rsync -av --exclude='__pycache__' --exclude='*.pyc' "scripts/" "$TARGET_DIR/scripts/" > /dev/null 2>&1
+    chmod +x "$TARGET_DIR/scripts"/*.sh 2>/dev/null || true
+    echo -e "${GREEN}  ✓${NC} Scripts directory copied"
+else
+    echo -e "${YELLOW}  ⚠${NC} scripts directory not found"
+fi
 
-# Make scripts executable
-chmod +x "$TARGET_DIR/scripts"/*.sh 2>/dev/null || true
-
-# Copy setup.js
-copy_with_progress "setup.js" "$TARGET_DIR/setup.js" "Interactive setup wizard"
-chmod +x "$TARGET_DIR/setup.js" 2>/dev/null || true
+# Copy setup.js (critical for setup wizard)
+if [ -f "setup.js" ]; then
+    cp "setup.js" "$TARGET_DIR/setup.js"
+    chmod +x "$TARGET_DIR/setup.js" 2>/dev/null || true
+    echo -e "${GREEN}  ✓${NC} Interactive setup wizard (setup.js)"
+else
+    echo -e "${RED}  ✗${NC} setup.js not found - setup wizard will not work!"
+fi
 
 echo ""
 echo -e "${BLUE}📖 Creating Framework README...${NC}"
@@ -323,7 +332,7 @@ uv run adw_triggers/trigger_webhook.py
 Copy `.env.sample` to `.env` and configure:
 
 ```bash
-# Required for API mode
+# Optional with Claude Code Pro subscription
 ANTHROPIC_API_KEY=sk-ant-...
 
 # Required for GitHub integration
@@ -477,7 +486,8 @@ echo ""
 
 echo -e "${BLUE}📊 Extraction Summary:${NC}"
 echo -e "  ${GREEN}✓${NC} ADW System (core modules, workflows, triggers)"
-echo -e "  ${GREEN}✓${NC} Claude Code Configuration (settings, hooks, commands)"
+echo -e "  ${GREEN}✓${NC} Claude Code Configuration (settings, settings.local, hooks, commands)"
+echo -e "  ${GREEN}✓${NC} Slash Commands (25+ commands including E2E tests)"
 echo -e "  ${GREEN}✓${NC} Testing Infrastructure (Playwright MCP, E2E templates)"
 echo -e "  ${GREEN}✓${NC} Documentation (guides, comparisons, agent catalog)"
 echo -e "  ${GREEN}✓${NC} Configuration Templates (.env, .gitignore, etc.)"
@@ -491,6 +501,38 @@ echo -e "  3. npm run setup        # Run interactive setup wizard"
 echo -e "  4. Review docs/README.md for usage guide"
 echo ""
 
-echo -e "${BLUE}🚀 Quick Start:${NC}"
-echo -e "  ${GREEN}cd $TARGET_DIR && npm run setup${NC}"
+# Prompt user to run setup interactively
+echo -e "${BLUE}🚀 Would you like to run the setup wizard now?${NC}"
+read -p "Navigate to $TARGET_DIR and run npm run setup? (Y/n): " -n 1 -r
+echo
+
+if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
+    echo -e "${GREEN}✓ Navigating to project and running setup...${NC}"
+    cd "$TARGET_DIR"
+    npm install
+    npm run setup
+
+    # Ask if user wants to open VS Code
+    echo ""
+    echo -e "${BLUE}📝 Would you like to open this project in VS Code?${NC}"
+    read -p "Open VS Code in $TARGET_DIR? (Y/n): " -n 1 -r
+    echo
+
+    if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
+        echo -e "${GREEN}✓ Opening VS Code...${NC}"
+        code .
+        echo -e "${GREEN}✓ VS Code opened for $TARGET_DIR${NC}"
+    fi
+
+    # Keep user in the new directory
+    echo ""
+    echo -e "${GREEN}✓ You are now in: $TARGET_DIR${NC}"
+    exec $SHELL
+else
+    echo -e "${YELLOW}⚠️  Skipped setup. Run manually when ready:${NC}"
+    echo -e "  ${GREEN}cd $TARGET_DIR && npm install && npm run setup${NC}"
+    echo ""
+    echo -e "${BLUE}To navigate to the new project:${NC}"
+    echo -e "  ${GREEN}cd $TARGET_DIR${NC}"
+fi
 echo ""
