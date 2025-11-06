@@ -95,9 +95,9 @@ def main():
     print(f"Starting E2E functionality tests for issue #{issue_number}...")
     
     try:
-        # Ensure we have required env vars
+        # Check optional env vars
         if not os.getenv("ANTHROPIC_API_KEY"):
-            print("⚠️  Warning: ANTHROPIC_API_KEY not set, some functionality may fail")
+            print("ℹ️  Info: ANTHROPIC_API_KEY not set - using Claude Code authenticated session (Pro subscription)")
         
         test_e2e_workflow(issue_number)
         

@@ -34,10 +34,12 @@ Workflows can be:
 
 ```bash
 export GITHUB_REPO_URL="https://github.com/owner/repository"
-export ANTHROPIC_API_KEY="sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+export ANTHROPIC_API_KEY="sk-ant-xxxx..."  # Optional with Claude Code Pro subscription
 export CLAUDE_CODE_PATH="/path/to/claude"  # Optional, defaults to "claude"
-export GITHUB_PAT="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # Optional, only if using different account than 'gh auth login'
+export GITHUB_PAT="ghp_xxxx..."  # Optional, only if using different account than 'gh auth login'
 ```
+
+**Note:** With Claude Code Pro subscription, `ANTHROPIC_API_KEY` is optional. Claude Code will use your authenticated session if the key is not set.
 
 ### 2. Install Prerequisites
 

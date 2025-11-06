@@ -29,3 +29,12 @@ This prompt helps you determine what documentation you should read based on the 
 - adws/README.md
   - Conditions:
     - When you're operating in the `adws/` directory
+
+- app_docs/feature-61d49d73-social-media-footer.md
+  - Conditions:
+    - When working with the application footer
+    - When implementing social media links or icons
+    - When modifying footer styles or layout
+    - When adding new social media platforms to the footer
+    - When troubleshooting footer display or responsive issues
+    - When implementing similar external link sections
