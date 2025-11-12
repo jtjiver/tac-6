@@ -311,12 +311,13 @@ function displayResults(response: QueryResponse, query: string) {
   if (!downloadButton) {
     downloadButton = document.createElement('button');
     downloadButton.className = 'download-button';
-    downloadButton.innerHTML = '⬇';
+    downloadButton.innerHTML = '<span style="font-size: 1rem;">📥</span> Export CSV';
     downloadButton.title = 'Export results as CSV';
 
-    // Insert download button before the toggle button
+    // Insert download button in the button container, before the toggle button
+    const buttonContainer = resultsHeader.querySelector('.results-header-buttons');
     const toggleButton = document.getElementById('toggle-results') as HTMLButtonElement;
-    toggleButton.parentElement?.insertBefore(downloadButton, toggleButton);
+    buttonContainer?.insertBefore(downloadButton, toggleButton);
   }
 
   // Store the SQL and columns data for export
@@ -326,10 +327,10 @@ function displayResults(response: QueryResponse, query: string) {
   // Set up download button click handler
   downloadButton.onclick = async (e) => {
     e.preventDefault();
-    const button = e.target as HTMLButtonElement;
+    const button = e.currentTarget as HTMLButtonElement;
     const originalContent = button.innerHTML;
     button.classList.add('loading');
-    button.innerHTML = '<span class="loading-secondary"></span>';
+    button.innerHTML = '<span class="loading-spinner"></span> Exporting...';
 
     try {
       const sql = button.dataset.sql || '';

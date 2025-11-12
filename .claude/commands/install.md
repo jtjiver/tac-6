@@ -18,13 +18,36 @@
 
 ## Report
 - Output the work you've just done in a concise bullet point list.
-- Instruct the user to fill out the root level ./.env based on .env.sample. 
+- Instruct the user to fill out the root level ./.env based on .env.sample.
 - If `./app/server/.env` does not exist, instruct the user to fill out `./app/server/.env` based on `./app/server/.env.sample`
 - If `./env` does not exist, instruct the user to fill out `./env` based on `./env.sample`
 - Mention the url of the frontend application we can visit based on `scripts/start.sh`
-- Mention: 'To setup your AFK Agent, be sure to update the remote repo url and push to a new repo so you have access to git issues and git prs:
-  ```
-  git remote add origin <your-new-repo-url>
-  git push -u origin main
-  ```'
+
+### IMPORTANT: Setup Git Remote for ADW
+
+**The install process removed the git remote. You MUST set this up for ADW to work.**
+
+ADW (AI Developer Workflow) requires a git remote to create branches, commits, and pull requests. Setup your GitHub repository now:
+
+**Option 1: Using HTTPS (Recommended - works with gh auth)**
+```bash
+git remote add origin https://github.com/yourusername/yourrepo.git
+git push -u origin main
+```
+
+**Option 2: Using SSH (Requires SSH keys configured)**
+```bash
+git remote add origin git@github.com:yourusername/yourrepo.git
+git push -u origin main
+```
+
+**Example with actual repository:**
+```bash
+# If your repo is: github.com/jtjiver/tac-6
+git remote add origin https://github.com/jtjiver/tac-6.git
+git push -u origin main
+```
+
+Without this, ADW commands will fail with: "No git remote 'origin' found"
+
 - Mention: If you want to upload images to github during the review process setup cloudflare for public image access you can setup your cloudflare environment variables. See .env.sample for the variables.

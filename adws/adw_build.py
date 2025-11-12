@@ -27,6 +27,7 @@ from dotenv import load_dotenv
 from adw_modules.state import ADWState
 from adw_modules.git_ops import commit_changes, finalize_git_operations, get_current_branch
 from adw_modules.github import fetch_issue, make_issue_comment, get_repo_url, extract_repo_path
+from adw_modules.utils import get_safe_subprocess_env
 from adw_modules.workflow_ops import (
     implement_plan,
     create_commit,
@@ -140,7 +141,10 @@ def main():
     
     # Checkout the branch from state
     branch_name = state.get("branch_name")
-    result = subprocess.run(["git", "checkout", branch_name], capture_output=True, text=True)
+    result = subprocess.run(
+        ["git", "checkout", branch_name],
+        capture_output=True, text=True, env=get_safe_subprocess_env()
+    )
     if result.returncode != 0:
         logger.error(f"Failed to checkout branch {branch_name}: {result.stderr}")
         make_issue_comment(

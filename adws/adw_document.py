@@ -33,7 +33,7 @@ from adw_modules.workflow_ops import (
     format_issue_message,
     find_spec_file,
 )
-from adw_modules.utils import setup_logger
+from adw_modules.utils import setup_logger, get_safe_subprocess_env
 from adw_modules.data_types import GitHubIssue, AgentTemplateRequest, DocumentationResult, IssueClassSlashCommand
 from adw_modules.agent import execute_template
 
@@ -262,7 +262,10 @@ def main():
     
     # Checkout the branch from state
     branch_name = state.get("branch_name")
-    result = subprocess.run(["git", "checkout", branch_name], capture_output=True, text=True)
+    result = subprocess.run(
+        ["git", "checkout", branch_name],
+        capture_output=True, text=True, env=get_safe_subprocess_env()
+    )
     if result.returncode != 0:
         logger.error(f"Failed to checkout branch {branch_name}: {result.stderr}")
         make_issue_comment(

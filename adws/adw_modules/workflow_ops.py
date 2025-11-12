@@ -16,7 +16,7 @@ from adw_modules.data_types import (
 from adw_modules.agent import execute_template
 from adw_modules.github import get_repo_url, extract_repo_path, ADW_BOT_IDENTIFIER
 from adw_modules.state import ADWState
-from adw_modules.utils import parse_json
+from adw_modules.utils import parse_json, get_safe_subprocess_env
 
 
 # Agent name constants
@@ -412,7 +412,10 @@ def find_existing_branch_for_issue(
     """Find an existing branch for the given issue number.
     Returns branch name if found, None otherwise."""
     # List all branches
-    result = subprocess.run(["git", "branch", "-a"], capture_output=True, text=True)
+    result = subprocess.run(
+        ["git", "branch", "-a"],
+        capture_output=True, text=True, env=get_safe_subprocess_env()
+    )
 
     if result.returncode != 0:
         return None

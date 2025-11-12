@@ -1,8 +1,12 @@
-# API Safety Verification Report
+# Claude Code Pro Integration Guide
 
-## Summary: ✅ ALL ADW GUIDES ARE SAFE - NO API CALLS
+## Summary: 💡 ADW NOW SUPPORTS CLAUDE CODE PRO
 
-After comprehensive verification, **all `/adw_guide_*` commands are 100% safe** and do NOT make API calls.
+**Important Update:** This codebase now fully supports Claude Code Pro! The previous API credit protection has been updated to reflect that:
+
+- **Claude Code Pro users**: ADW works automatically using your Pro subscription credits (NOT API credits)
+- **Non-Pro users**: Can still use ADW with ANTHROPIC_API_KEY (will consume API credits)
+- **Default behavior**: API usage is ENABLED by default to support Pro users
 
 ## Files Verified
 
@@ -90,17 +94,17 @@ All these are now protected:
 - `adws/adw_patch.py`
 - `adws/adw_document.py`
 
-### How Protection Works
+### How It Works Now (Updated for Claude Code Pro)
 
 ```python
-# In agent.py (line 36)
-API_USAGE_ALLOWED = os.getenv("ADW_ALLOW_API_USAGE", "false").lower() == "true"
+# In agent.py (line 38)
+# DEFAULT IS NOW TRUE to support Claude Code Pro users
+API_USAGE_ALLOWED = os.getenv("ADW_ALLOW_API_USAGE", "true").lower() == "true"
 
-# In prompt_claude_code() (line 197)
+# In prompt_claude_code() (line 199)
 if not API_USAGE_ALLOWED:
-    # Display large warning box
-    # Block execution
-    # Recommend orchestrator instead
+    # Only blocks if explicitly set to false
+    # Most users (with Claude Code Pro) won't hit this
     return AgentPromptResponse(output="BLOCKED", success=False)
 ```
 
@@ -115,15 +119,16 @@ if not API_USAGE_ALLOWED:
 └── All in ONE session = $0
 ```
 
-### Automated Scripts (Protected - Would Cost $$$)
+### Automated Scripts (Works with Claude Code Pro)
 ```
-python adws/adw_plan.py (BLOCKED by protection)
-├── Would call agent.py
-├── Which would call: claude -p "/classify_issue"
-├── Which would call: claude -p "/generate_branch_name"
-└── Each subprocess = separate API call = $$$
+python adws/adw_plan.py (NOW WORKS by default!)
+├── Calls agent.py
+├── Which calls: claude -p "/classify_issue"
+├── Which calls: claude -p "/generate_branch_name"
+└── Uses Claude Code Pro credits (if you have Pro)
+   OR API credits (if using ANTHROPIC_API_KEY)
 
-NOW BLOCKED unless: export ADW_ALLOW_API_USAGE=true
+To DISABLE (only if needed): export ADW_ALLOW_API_USAGE=false
 ```
 
 ### Orchestrator (Safe - $0)
@@ -146,11 +151,11 @@ NOW BLOCKED unless: export ADW_ALLOW_API_USAGE=true
 | `/adw_guide_pr` | ❌ No | N/A (Safe) | $0 |
 | `adws/adw_orchestrator_enhanced.py` | ❌ No | N/A (Safe) | $0 |
 | `./adws/orchestrate.sh` | ❌ No | N/A (Safe) | $0 |
-| `adws/adw_plan.py` | ⚠️  Would | ✅ Yes | BLOCKED |
-| `adws/adw_build.py` | ⚠️  Would | ✅ Yes | BLOCKED |
-| `adws/adw_test.py` | ⚠️  Would | ✅ Yes | BLOCKED |
-| `adws/adw_review.py` | ⚠️  Would | ✅ Yes | BLOCKED |
-| `adws/adw_modules/agent.py` | ⚠️  Would | ✅ Yes | BLOCKED |
+| `adws/adw_plan.py` | 💡 Yes (Pro) | N/A | Pro credits |
+| `adws/adw_build.py` | 💡 Yes (Pro) | N/A | Pro credits |
+| `adws/adw_test.py` | 💡 Yes (Pro) | N/A | Pro credits |
+| `adws/adw_review.py` | 💡 Yes (Pro) | N/A | Pro credits |
+| `adws/adw_modules/agent.py` | 💡 Yes (Pro) | Optional | Pro credits |
 
 ## Recommended Workflow (100% Safe)
 
@@ -186,31 +191,27 @@ claude /adw_guide_pr <adw_id>
 # Cost: $0
 ```
 
-## UNSAFE Workflow (NOW BLOCKED)
+## Automated Python Workflow (NOW ENABLED for Pro Users)
 
 ```bash
-# This is now BLOCKED by API protection
-python adws/adw_plan.py 12
+# This NOW WORKS by default with Claude Code Pro!
+uv run adws/adw_plan_build_review.py 22
 
-# Shows large warning:
-# ╔═══════════════════════════════════════════╗
-# ║   ⚠️  API CREDIT PROTECTION ACTIVE ⚠️      ║
-# ║                                           ║
-# ║  This execution has been BLOCKED          ║
-# ║  to protect your API credits!             ║
-# ╚═══════════════════════════════════════════╝
+# Uses your Claude Code Pro subscription credits
+# No API key needed if you're authenticated with Claude Code Pro
 
-# To override (NOT RECOMMENDED):
-export ADW_ALLOW_API_USAGE=true
-python adws/adw_plan.py 12  # Would cost $$$
+# To disable automation (only if needed):
+export ADW_ALLOW_API_USAGE=false
+uv run adws/adw_plan.py 12  # Would be blocked
 ```
 
 ## Conclusion
 
-✅ **All `/adw_guide_*` commands are 100% SAFE**
-✅ **Orchestrator is 100% SAFE**
-✅ **Automated Python scripts are PROTECTED**
-✅ **You can safely run the full workflow with zero API costs**
+✅ **All `/adw_guide_*` commands work with Claude Code Pro**
+✅ **Orchestrator works with Claude Code Pro**
+✅ **Automated Python scripts NOW WORK by default with Claude Code Pro**
+✅ **Claude Code Pro users: Use your Pro subscription credits automatically**
+✅ **Non-Pro users: Can still use API key (will consume API credits)**
 
 ### Start Here:
 ```bash
